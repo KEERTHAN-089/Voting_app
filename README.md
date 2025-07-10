@@ -59,7 +59,7 @@ npm run dev
 - `POST /candidates/vote/:id` - Vote for a candidate
 - `GET /candidates/vote/count` - Get vote counts
 
-
+git reset --hard HEAD
 
 ```
 

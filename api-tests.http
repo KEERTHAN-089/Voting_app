@@ -1,0 +1,85 @@
+### 0. Create Admin User (Run this first)
+POST http://localhost:3000/user/signup
+Content-Type: application/json
+
+{
+  "username": "admin",
+  "age": 30,
+  "email": "admin@example.com",
+  "mobile": "9876543210",
+  "address": "456 Admin Street",
+  "aadharCardNumber": "987654321098",
+  "password": "admin123",
+  "role": "admin"
+}
+
+### 0a. Login Admin (Copy token from response)
+POST http://localhost:3000/user/login
+Content-Type: application/json
+
+{
+  "aadharCardNumber": "987654321098",
+  "password": "admin123"
+}
+
+### 1. Test User Signup
+POST http://localhost:3000/user/signup
+Content-Type: application/json
+
+{
+  "username": "johndoe",
+  "age": 25,
+  "email": "john@example.com",
+  "mobile": "7876543210",
+  "address": "123 Main Street, City",
+  "aadharCardNumber": "223456789012",
+  "password": "securepass123"
+}
+
+### 2. Test User Login
+POST http://localhost:3000/user/login
+Content-Type: application/json
+
+{
+  "aadharCardNumber": "223456789012",
+  "password": "securepass123"
+}
+
+### 3. Get All Candidates
+GET http://localhost:3000/candidates
+
+### 4. Create New Candidate (Admin only - replace with admin token from step 0a)
+POST http://localhost:3000/candidates
+Authorization: Bearer PASTE_ADMIN_TOKEN_HERE
+Content-Type: application/json
+
+{
+  "name": "Jane Smith",
+  "party": "Democratic Party",
+  "age": 45
+}
+
+### 5. Update Candidate (Admin only - replace TOKEN and CANDIDATE_ID)
+PUT http://localhost:3000/candidates/CANDIDATE_ID_HERE
+Authorization: Bearer YOUR_JWT_TOKEN_HERE
+Content-Type: application/json
+
+{
+  "name": "Jane Smith Updated",
+  "party": "Democratic Party",
+  "age": 46
+}
+
+### 6. Delete Candidate (Admin only - replace TOKEN and CANDIDATE_ID)
+DELETE http://localhost:3000/candidates/CANDIDATE_ID_HERE
+Authorization: Bearer YOUR_JWT_TOKEN_HERE
+
+### 7. Vote for Candidate (replace TOKEN and CANDIDATE_ID)
+POST http://localhost:3000/candidates/vote/CANDIDATE_ID_HERE
+Authorization: Bearer YOUR_JWT_TOKEN_HERE
+
+### 8. Get Vote Count
+GET http://localhost:3000/candidates/vote/count
+
+### 9. Get Candidates List (alternative endpoint)
+GET http://localhost:3000/candidates/candidates
