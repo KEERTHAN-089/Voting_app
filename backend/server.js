@@ -17,6 +17,12 @@ const candidateRoutes = require('./routes/candidateRoute');
 app.use('/user', userRoutes);
 app.use('/candidates',  candidateRoutes);
 
+// Serve frontend in production (only for non-API routes)
+const path = require('path');
+app.use(express.static(path.join(__dirname, 'frontend', 'build')));
+app.get(/^\/(?!api|user|candidates).*/, (req, res) => {
+  res.sendFile(path.join(__dirname, 'frontend', 'build', 'index.html'));
+});
 
 app.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);
