@@ -1,0 +1,231 @@
+/* Voting Page Styles */
+.voting-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 2rem 1rem;
+}
+
+.voting-header {
+  text-align: center;
+  margin-bottom: 2rem;
+}
+
+.voting-subtitle {
+  color: #6c757d;
+  font-size: 1.1rem;
+}
+
+/* Candidate Cards Grid */
+.candidates-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 1.5rem;
+  margin-bottom: 2rem;
+}
+
+.candidate-card {
+  position: relative;
+  border: 2px solid #e9ecef;
+  border-radius: 8px;
+  padding: 1.5rem;
+  transition: all 0.3s ease;
+  cursor: pointer;
+  background-color: #fff;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+}
+
+.candidate-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+  border-color: #ced4da;
+}
+
+.candidate-card.selected {
+  border-color: #007bff;
+  background-color: #f8f9ff;
+  box-shadow: 0 5px 15px rgba(0, 123, 255, 0.2);
+}
+
+.candidate-selection {
+  position: absolute;
+  top: 15px;
+  right: 15px;
+}
+
+.candidate-radio {
+  transform: scale(1.5);
+  cursor: pointer;
+}
+
+.candidate-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.candidate-image-container {
+  width: 120px;
+  height: 120px;
+  margin-bottom: 1rem;
+  border-radius: 50%;
+  overflow: hidden;
+  border: 1px solid #dee2e6;
+}
+
+.candidate-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.candidate-image-placeholder {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: #e9ecef;
+  font-size: 3rem;
+  color: #6c757d;
+}
+
+.candidate-details {
+  text-align: center;
+  width: 100%;
+}
+
+.candidate-name {
+  font-size: 1.5rem;
+  margin-bottom: 0.5rem;
+  color: #343a40;
+}
+
+.candidate-party {
+  font-weight: 500;
+  color: #495057;
+  margin-bottom: 0.25rem;
+}
+
+.candidate-age {
+  color: #6c757d;
+  font-size: 0.9rem;
+}
+
+.selection-indicator {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background-color: #007bff;
+  color: white;
+  text-align: center;
+  padding: 0.5rem;
+  border-bottom-left-radius: 6px;
+  border-bottom-right-radius: 6px;
+  font-weight: 500;
+}
+
+/* Voting Actions */
+.voting-actions {
+  display: flex;
+  justify-content: center;
+  margin-top: 2rem;
+}
+
+.vote-button {
+  padding: 0.75rem 2rem;
+  font-size: 1.1rem;
+  border-radius: 50px;
+  transition: all 0.3s ease;
+}
+
+.vote-button:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0, 123, 255, 0.3);
+}
+
+.vote-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+/* Loading State */
+.loading-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 3rem 0;
+}
+
+.spinner {
+  border: 4px solid rgba(0, 123, 255, 0.3);
+  border-radius: 50%;
+  border-top: 4px solid #007bff;
+  width: 40px;
+  height: 40px;
+  animation: spin 1s linear infinite;
+  margin-bottom: 1rem;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+/* Success Animation */
+.vote-success {
+  text-align: center;
+  padding: 3rem 0;
+}
+
+.check-animation {
+  display: inline-block;
+  color: #28a745;
+  font-size: 5rem;
+  animation: scaleIn 0.5s ease-in-out;
+}
+
+@keyframes scaleIn {
+  0% { transform: scale(0); opacity: 0; }
+  80% { transform: scale(1.2); opacity: 1; }
+  100% { transform: scale(1); }
+}
+
+/* Already Voted State */
+.already-voted {
+  max-width: 700px;
+  margin: 0 auto;
+}
+
+.already-voted-alert {
+  display: flex;
+  align-items: center;
+  padding: 2rem;
+}
+
+.already-voted-icon {
+  margin-right: 1.5rem;
+  color: #17a2b8;
+}
+
+.already-voted-content {
+  flex: 1;
+}
+
+/* Responsive Adjustments */
+@media (max-width: 768px) {
+  .candidates-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .already-voted-alert {
+    flex-direction: column;
+    text-align: center;
+  }
+  
+  .already-voted-icon {
+    margin-right: 0;
+    margin-bottom: 1rem;
+  }
+}

@@ -494,6 +494,22 @@ body {
   margin-top: 1.5rem;
 }
 
+/* Form validation styles */
+.form-group input.error {
+  border: 1px solid var(--accent-color);
+  background-color: rgba(231, 76, 60, 0.05);
+}
+
+.form-group .error-text {
+  color: var(--accent-color);
+  font-size: 0.875rem;
+  margin-top: 0.25rem;
+}
+
+.required {
+  color: var(--accent-color);
+}
+
 /* Responsive Design */
 @media (max-width: 768px) {
   .navbar {

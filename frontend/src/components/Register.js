@@ -25,32 +25,50 @@ const Register = () => {
   const onSubmit = async (e) => {
     e.preventDefault();
     
+    // Clear previous errors
+    setError('');
+    
+    // Client-side validation
     if (password !== confirmPassword) {
       setError('Passwords do not match');
       return;
     }
     
+    // Validate password length
+    if (password.length < 6) {
+      setError('Password must be at least 6 characters long');
+      return;
+    }
+    
+    // Validate Aadhar card number
+    if (aadharCardNumber.length !== 12 || !/^\d+$/.test(aadharCardNumber)) {
+      setError('Aadhar Card Number must be exactly 12 digits');
+      return;
+    }
+    
     try {
-      // Make sure we're using the correct endpoint
+      // Trim and normalize data before sending
+      const payload = {
+        username: username.trim(),
+        age: parseInt(age, 10),
+        email: email.trim().toLowerCase(),
+        mobile: mobile.trim().replace(/\s+/g, ''),
+        address: address.trim().substring(0, 500), // Limit address to 500 chars
+        aadharCardNumber: aadharCardNumber.trim().replace(/\s+/g, ''),
+        password
+      };
+      
       console.log("Sending request to:", `/user/signup`);
       console.log("Request payload:", {
-        username,
-        age: parseInt(age, 10),
-        email,
-        mobile,
-        address,
-        aadharCardNumber,
-        password
+        ...payload,
+        password: '********'
       });
       
-      const response = await api.post('/user/signup', {
-        username,
-        age: parseInt(age, 10),
-        email,
-        mobile,
-        address,
-        aadharCardNumber,
-        password
+      // Reduce unnecessary headers by using a simplified config
+      const response = await api.post('/user/signup', payload, {
+        headers: {
+          'Content-Type': 'application/json'
+        }
       });
       
       console.log('Registration successful:', response.data);

@@ -1,45 +1,71 @@
 import React, { useState, useEffect } from 'react';
+import api from '../utils/api';
 
 const CandidateForm = ({ initialData, onSubmit, onCancel }) => {
   const [formData, setFormData] = useState({
     name: '',
     party: '',
-    age: '',
-    image: null
+    age: ''
   });
+  const [image, setImage] = useState(null);
   const [imagePreview, setImagePreview] = useState(null);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [formErrors, setFormErrors] = useState({});
 
   useEffect(() => {
     if (initialData) {
       setFormData({
         name: initialData.name || '',
         party: initialData.party || '',
-        age: initialData.age || '',
-        image: null
+        age: initialData.age || ''
       });
       
-      // If there's an image URL in the initial data
-      if (initialData.imageUrl) {
-        setImagePreview(initialData.imageUrl);
+      // If there's an image, fetch and set the preview
+      if (initialData.imageId) {
+        setImagePreview(`/api/candidates/image/${initialData.imageId}`);
       }
     }
   }, [initialData]);
 
-  const handleChange = (e) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
+  const validateForm = () => {
+    const newErrors = {};
+    if (!formData.name.trim()) {
+      newErrors.name = 'Name is required';
+    }
+    if (!formData.party.trim()) {
+      newErrors.party = 'Party is required';
+    }
+    
+    setFormErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+  const handleInputChange = (e) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({
+      ...prev,
+      [name]: value
+    }));
+    
+    // Clear error when user starts typing
+    if (formErrors[name]) {
+      setFormErrors(prev => ({
+        ...prev,
+        [name]: ''
+      }));
+    }
   };
 
   const handleImageChange = (e) => {
     const file = e.target.files[0];
     if (file) {
-      setFormData({ ...formData, image: file });
+      setImage(file);
       
-      // Create a preview URL for the image
+      // Create preview URL
       const reader = new FileReader();
-      reader.onloadend = () => {
+      reader.onload = () => {
         setImagePreview(reader.result);
       };
       reader.readAsDataURL(file);
@@ -49,49 +75,59 @@ const CandidateForm = ({ initialData, onSubmit, onCancel }) => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     
-    if (!formData.name || !formData.party) {
-      setError('Name and party are required');
+    // Validate form before submission
+    if (!validateForm()) {
       return;
     }
     
-    setIsSubmitting(true);
     setError('');
     setSuccess('');
+    setLoading(true);
     
     try {
-      // Create a FormData object to handle file upload
+      // Create FormData object to handle file upload
       const submitData = new FormData();
       submitData.append('name', formData.name);
       submitData.append('party', formData.party);
       if (formData.age) {
         submitData.append('age', formData.age);
       }
-      if (formData.image) {
-        submitData.append('image', formData.image);
+      if (image) {
+        submitData.append('image', image);
       }
       
-      const result = await onSubmit(submitData);
-      
-      if (result.success) {
-        setSuccess(initialData ? 'Candidate updated successfully' : 'Candidate added successfully');
-        if (!initialData) {
-          // Clear form after adding (not when editing)
-          setFormData({
-            name: '',
-            party: '',
-            age: '',
-            image: null
-          });
-          setImagePreview(null);
-        }
+      let result;
+      if (initialData) {
+        // Update existing candidate
+        const response = await api.put(`/api/candidates/${initialData._id}`, submitData, {
+          headers: { 'Content-Type': 'multipart/form-data' }
+        });
+        result = { success: true, data: response.data };
       } else {
-        setError(result.message || 'Error processing candidate');
+        // Create new candidate
+        const response = await api.post('/api/candidates', submitData, {
+          headers: { 'Content-Type': 'multipart/form-data' }
+        });
+        result = { success: true, data: response.data };
       }
+      
+      setSuccess(initialData ? 'Candidate updated successfully!' : 'Candidate added successfully!');
+      
+      // Reset form if adding a new candidate
+      if (!initialData) {
+        setFormData({ name: '', party: '', age: '' });
+        setImage(null);
+        setImagePreview(null);
+      }
+      
+      // Call parent submit handler if provided
+      if (onSubmit) onSubmit(result);
+      
     } catch (err) {
-      setError('An unexpected error occurred');
-      console.error(err);
+      console.error('Error submitting form:', err);
+      setError(err.response?.data?.message || 'An error occurred while saving the candidate');
     } finally {
-      setIsSubmitting(false);
+      setLoading(false);
     }
   };
 
@@ -102,27 +138,31 @@ const CandidateForm = ({ initialData, onSubmit, onCancel }) => {
       
       <form onSubmit={handleSubmit}>
         <div className="form-group">
-          <label htmlFor="name">Candidate Name</label>
+          <label htmlFor="name">Candidate Name <span className="required">*</span></label>
           <input
             type="text"
             id="name"
             name="name"
             value={formData.name}
-            onChange={handleChange}
+            onChange={handleInputChange}
             required
+            className={formErrors.name ? 'error' : ''}
           />
+          {formErrors.name && <div className="error-message">{formErrors.name}</div>}
         </div>
         
         <div className="form-group">
-          <label htmlFor="party">Political Party</label>
+          <label htmlFor="party">Political Party <span className="required">*</span></label>
           <input
             type="text"
             id="party"
             name="party"
             value={formData.party}
-            onChange={handleChange}
+            onChange={handleInputChange}
             required
+            className={formErrors.party ? 'error' : ''}
           />
+          {formErrors.party && <div className="error-message">{formErrors.party}</div>}
         </div>
         
         <div className="form-group">
@@ -132,14 +172,14 @@ const CandidateForm = ({ initialData, onSubmit, onCancel }) => {
             id="age"
             name="age"
             value={formData.age}
-            onChange={handleChange}
+            onChange={handleInputChange}
             min="18"
             max="120"
           />
         </div>
         
-        <div className="form-group image-upload-container">
-          <label className="image-upload-label" htmlFor="image">Candidate Image (optional)</label>
+        <div className="form-group">
+          <label htmlFor="image">Candidate Photo</label>
           <input
             type="file"
             id="image"
@@ -147,29 +187,29 @@ const CandidateForm = ({ initialData, onSubmit, onCancel }) => {
             accept="image/*"
             onChange={handleImageChange}
           />
-          
-          {imagePreview && (
-            <div className="image-preview">
-              <img src={imagePreview} alt="Candidate preview" />
-            </div>
-          )}
         </div>
+        
+        {imagePreview && (
+          <div className="image-preview">
+            <img src={imagePreview} alt="Preview" />
+          </div>
+        )}
         
         <div className="form-buttons">
           <button 
             type="submit" 
             className="btn btn-primary"
-            disabled={isSubmitting}
+            disabled={loading}
           >
-            {isSubmitting ? 'Processing...' : initialData ? 'Update Candidate' : 'Add Candidate'}
+            {loading ? 'Saving...' : initialData ? 'Update Candidate' : 'Add Candidate'}
           </button>
           
           {initialData && (
             <button 
               type="button" 
-              className="btn btn-secondary" 
+              className="btn btn-secondary"
               onClick={onCancel}
-              disabled={isSubmitting}
+              disabled={loading}
             >
               Cancel
             </button>

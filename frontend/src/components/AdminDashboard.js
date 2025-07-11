@@ -43,26 +43,26 @@ const AdminDashboard = () => {
   const fetchCandidates = async () => {
     try {
       setLoading(true);
-      const response = await api.get('/candidates');
-      setCandidates(response.data);
+      setError('');
+      
+      console.log('Fetching candidates...');
+      const response = await api.getCandidates();
+      
+      console.log('Candidates response:', response.data);
+      setCandidates(Array.isArray(response.data) ? response.data : []);
       setLoading(false);
     } catch (err) {
       console.error('Error fetching candidates:', err);
-      setError('Failed to load candidates');
+      setError('Failed to load candidates. Please try again later.');
+      setCandidates([]);
       setLoading(false);
     }
   };
 
   const handleAddCandidate = async (candidateData) => {
     try {
-      // Use FormData with proper headers for multipart/form-data
-      const config = {
-        headers: {
-          'Content-Type': 'multipart/form-data'
-        }
-      };
-      
-      await api.post('/candidates', candidateData, config);
+      // Use the updated endpoint
+      await api.createCandidate(candidateData);
       fetchCandidates();
       return { success: true };
     } catch (err) {
@@ -76,14 +76,8 @@ const AdminDashboard = () => {
 
   const handleUpdateCandidate = async (id, candidateData) => {
     try {
-      // Use FormData with proper headers for multipart/form-data
-      const config = {
-        headers: {
-          'Content-Type': 'multipart/form-data'
-        }
-      };
-      
-      await api.put(`/candidates/${id}`, candidateData, config);
+      // Use the updated endpoint
+      await api.updateCandidate(id, candidateData);
       setEditingCandidate(null);
       fetchCandidates();
       return { success: true };
@@ -102,7 +96,8 @@ const AdminDashboard = () => {
     }
     
     try {
-      await api.delete(`/candidates/${id}`);
+      // Use the updated endpoint
+      await api.deleteCandidate(id);
       fetchCandidates();
     } catch (err) {
       console.error('Error deleting candidate:', err);
@@ -111,12 +106,31 @@ const AdminDashboard = () => {
   };
 
   if (loading) return <div className="loading">Loading admin dashboard...</div>;
-  if (error) return <div className="alert alert-danger">{error}</div>;
-  if (!isAdmin) return <div className="loading">Checking admin privileges...</div>;
-
+  if (!isAdmin) return (
+    <div className="unauthorized">
+      <h2>Unauthorized Access</h2>
+      <p>{error || "You don't have administrator privileges."}</p>
+      <button className="btn btn-primary" onClick={() => navigate('/')}>
+        Return to Home
+      </button>
+    </div>
+  );
+  
   return (
     <div className="admin-dashboard">
       <h2>Admin Dashboard</h2>
+      
+      {error && (
+        <div className="alert alert-danger">
+          {error}
+          <button 
+            className="btn btn-sm btn-outline-primary ml-3"
+            onClick={fetchCandidates}
+          >
+            Retry
+          </button>
+        </div>
+      )}
       
       <div className="admin-section">
         <h3>Manage Candidates</h3>
@@ -141,8 +155,21 @@ const AdminDashboard = () => {
         
         <div className="candidate-list">
           <h4>Current Candidates</h4>
+          <div className="d-flex justify-content-between mb-2">
+            <span>{candidates.length} candidates found</span>
+            <button 
+              className="btn btn-sm btn-outline-secondary" 
+              onClick={fetchCandidates}
+              disabled={loading}
+            >
+              {loading ? 'Refreshing...' : 'Refresh List'}
+            </button>
+          </div>
+          
           {candidates.length === 0 ? (
-            <p>No candidates available.</p>
+            <div className="alert alert-info">
+              No candidates available. {!error ? 'Add your first candidate using the form above.' : ''}
+            </div>
           ) : (
             <table className="candidates-table">
               <thead>

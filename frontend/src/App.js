@@ -1,6 +1,9 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import './App.css';
+import './styles/VotingPage.css';
+import './styles/Results.css';
+import './styles/HomePage.css';
 
 // Import components
 import Home from './components/Home';
