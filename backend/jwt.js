@@ -1,36 +1,32 @@
 const jwt = require('jsonwebtoken');
+require('dotenv').config();
 
-const jwtAuthMiddleware = (req, res, next) => {
+const JWT_SECRET = process.env.JWT_SECRET;
 
-    const authorization = req.headers.authorization;
-    if (!authorization) {
-        return res.status(401).json({ message: 'Authorization header is missing' });
-    }
-    const token = authorization.split(' ')[1];
-    if (!token) {
-        return res.status(401).json({ message: 'Token is missing' });
-    }
-    try{
-        const decoded = jwt.verify(token, process.env.JWT_SECRET);
-        req.user = decoded;
-        next();
-    }catch (error) {
-        return res.status(401).json({ message: 'Invalid token' });
-    }
+if (!JWT_SECRET) {
+  console.error('JWT_SECRET is not defined in environment variables!');
+  process.exit(1);
 }
 
-//Function to generate JWT token
-const generateToken = (payload) => {
-    if (!process.env.JWT_SECRET) {
-        throw new Error('JWT_SECRET environment variable is not set');
-    }
-    return jwt.sign(
-        payload,
-        process.env.JWT_SECRET,
-        { expiresIn: '1h' }
-    );
-}
+// Generate token function - make sure it includes all necessary user info
+const generateToken = (user) => {
+  return jwt.sign(
+    {
+      id: user._id || user.id,
+      role: user.role,
+      username: user.username
+    },
+    JWT_SECRET,
+    { expiresIn: '24h' }
+  );
+};
+
+// Verify token function
+const verifyToken = (token) => {
+  return jwt.verify(token, JWT_SECRET);
+};
+
 module.exports = {
-    jwtAuthMiddleware,
-    generateToken
+  generateToken,
+  verifyToken
 };

@@ -1,16 +1,31 @@
 const mongoose = require('mongoose');
 
-const candidateSchema = new mongoose.Schema({
-    name: { type: String, required: true },
-    party: { type: String, required: true },
-    age: { type: Number, required: true },
-    votes: [{
-        user: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
-        votedAt: { type: Date, default: Date.now }
-    }],
-    voteCount: { type: Number, default: 0 },
+const CandidateSchema = new mongoose.Schema({
+  name: {
+    type: String,
+    required: true,
+    trim: true
+  },
+  party: {
+    type: String,
+    required: true,
+    trim: true
+  },
+  age: {
+    type: Number,
+    min: 18
+  },
+  voteCount: {
+    type: Number,
+    default: 0
+  },
+  imageUrl: {
+    type: String,
+    default: null
+  }
+}, {
+  timestamps: true
 });
 
-const Candidate = mongoose.model('Candidate', candidateSchema);
-module.exports = Candidate;
-// This schema defines a Candidate model with fields for name, party, age, and votes. 
+module.exports = mongoose.model('Candidate', CandidateSchema);
+// This schema defines a Candidate model with fields for name, party, age, and votes.
