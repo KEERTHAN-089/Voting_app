@@ -43,27 +43,14 @@ const UserSchema = new mongoose.Schema({
     enum: ['voter', 'admin'],
     default: 'voter'
   },
-  // Voting fields
   hasVoted: {
-    type: Boolean,
-    default: false,
-    index: true // Add index for faster lookups
-  },
-  isVoted: {
     type: Boolean,
     default: false
   },
-  votedFor: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'Candidate',
-    default: null
-  },
-  votedAt: {
+  createdAt: {
     type: Date,
-    default: null
+    default: Date.now
   }
-}, {
-  timestamps: true
 });
 
 // Hash password before saving
@@ -85,19 +72,5 @@ UserSchema.pre('save', async function(next) {
 UserSchema.methods.comparePassword = async function(candidatePassword) {
   return bcrypt.compare(candidatePassword, this.password);
 };
-
-// Add a pre-save hook to ensure voting fields are consistent
-UserSchema.pre('save', function(next) {
-  // If one voting field is set, ensure the other is too
-  if (this.isModified('hasVoted') || this.isModified('isVoted')) {
-    if (this.hasVoted === true) {
-      this.isVoted = true;
-    }
-    if (this.isVoted === true) {
-      this.hasVoted = true;
-    }
-  }
-  next();
-});
 
 module.exports = mongoose.model('User', UserSchema);

@@ -1,13 +1,23 @@
 const express = require('express');
 const router = express.Router();
-const User = require('../models/user');
-const {jwtAuthMiddleware,generateToken} = require('./../jwt');
+// Update import path if needed
+const User = require('../models/User');
+const { generateToken } = require('../jwt');
+const auth = require('../middleware/auth');
 
 
-
+// User signup route
 router.post('/signup', async (req, res) => {
     try {
+        console.log('Received signup request');
         const data = req.body;
+        
+        // Log the data for debugging but truncate large values
+        console.log('Request body:', {
+            ...data,
+            password: data.password ? '********' : undefined,
+            address: data.address ? (data.address.length > 100 ? data.address.substring(0, 100) + '...' : data.address) : undefined
+        });
         
         // Validate required fields
         const requiredFields = ['username', 'age', 'email', 'mobile', 'address', 'aadharCardNumber', 'password'];
@@ -19,16 +29,50 @@ router.post('/signup', async (req, res) => {
                 missingFields: missingFields
             });
         }
+
+        // Validate data lengths to prevent oversized requests
+        if (data.address && data.address.length > 500) {
+            return res.status(400).json({
+                message: 'Address too long (max 500 characters)'
+            });
+        }
         
-        const newUser = new User(data);
+        if (data.aadharCardNumber && data.aadharCardNumber.length !== 12) {
+            return res.status(400).json({
+                message: 'Aadhar card number must be 12 digits'
+            });
+        }
+        
+        // Create user with validated data
+        const newUser = new User({
+            username: data.username,
+            age: parseInt(data.age, 10),
+            email: data.email,
+            mobile: data.mobile,
+            address: data.address,
+            aadharCardNumber: data.aadharCardNumber,
+            password: data.password,
+            role: 'voter'  // Default role
+        });
+        
         const response = await newUser.save();
+        console.log('User saved successfully:', response._id);
 
         const payload = {
             id: response._id 
         };
         const token = generateToken(payload);
+        
+        // Return minimal user data to reduce response size
+        const userData = {
+            _id: response._id,
+            username: response.username,
+            email: response.email,
+            role: response.role
+        };
+        
         res.status(201).json({
-            user: response,
+            user: userData,
             token
         });
     } catch (error) {
@@ -57,9 +101,8 @@ router.post('/signup', async (req, res) => {
         res.status(500).json({ message: 'Internal server error' });
     }
 });
-//login route
-// This route allows users to log in using their Aadhar card number and password.
 
+// User login route
 router.post('/login', async (req, res) => {
     try {
         const { aadharCardNumber, password } = req.body;
@@ -86,7 +129,7 @@ router.post('/login', async (req, res) => {
 });
 
 // Get user profile route
-router.get('/profile', jwtAuthMiddleware, async (req, res) => {
+router.get('/profile', auth, async (req, res) => {
     try {
         const user = await User.findById(req.user.id);
         res.status(200).json(user);
@@ -96,26 +139,34 @@ router.get('/profile', jwtAuthMiddleware, async (req, res) => {
     }
 });
 
-
-router.put('/profile/password', jwtAuthMiddleware, async (req, res) => {
-    try {
-        const userId= req.user.id;
-        const { oldPassword, newPassword } = req.body;
-        const user = await User.findById(userId); 
-        if (!user) {
-            return res.status(404).json({ message: 'User not found' });
-        }
-        const isMatch = await user.comparePassword(oldPassword);
-        if (!isMatch) {
-            return res.status(401).json({ message: 'Old password is incorrect' });
-        }
-        user.password = newPassword;
-        await user.save();
-        res.status(200).json({ message: 'Password updated successfully' });
-    } catch (error) {
-        console.error('Error updating password:', error);
-        res.status(500).json({ message: 'Internal server error' });
+// Get user vote status - more accurate check
+router.get('/vote/status', auth, async (req, res) => {
+  try {
+    console.log('Checking vote status for user ID:', req.user.id);
+    const user = await User.findById(req.user.id);
+    
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
     }
+    
+    // Log the current status
+    console.log('Vote status check:', {
+      userId: user._id,
+      hasVoted: !!user.hasVoted,
+      isVoted: !!user.isVoted
+    });
+    
+    const hasVoted = user.hasVoted === true || user.isVoted === true;
+    
+    res.json({
+      hasVoted: hasVoted,
+      votedFor: hasVoted ? user.votedFor : null,
+      votedAt: hasVoted ? user.votedAt : null
+    });
+  } catch (err) {
+    console.error('Error checking vote status:', err);
+    res.status(500).json({ message: 'Server error' });
+  }
 });
 
 module.exports = router;
