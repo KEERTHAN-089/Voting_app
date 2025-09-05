@@ -1,8 +1,8 @@
 const express = require('express');
 const router = express.Router();
-const User = require('../models/User');
+const User = require('../models/User'); // Corrected path
 const {jwtAuthMiddleware,generateToken} = require('./../jwt');
-const Candidate = require('../models/Candidate');
+const Candidate = require('../models/Candidate'); // Corrected path
 const path = require('path');
 const fs = require('fs');
 const multer = require('multer');
