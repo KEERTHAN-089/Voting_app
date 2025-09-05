@@ -2,10 +2,11 @@ import axios from 'axios';
 
 // Define base URLs to try in order of preference
 const POSSIBLE_BASE_URLS = [
-  process.env.REACT_APP_API_URL,
-  'http://localhost:3000',
-  'http://127.0.0.1:3000',
-  'http://localhost:5000',
+  process.env.REACT_APP_API_URL, // Set this in .env.production to your deployed backend URL
+  "https://your-backend-url.vercel.app", // Replace with actual backend URL
+  "http://localhost:3000",
+  "http://127.0.0.1:3000",
+  "http://localhost:5000",
   window.location.origin // Fallback to same origin
 ];
 
