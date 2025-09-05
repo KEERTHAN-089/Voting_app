@@ -1,41 +1,34 @@
 const fs = require('fs');
 const path = require('path');
 
-// Files to remove
+// Files that can be safely removed
 const filesToRemove = [
-  // Temporary Git helpers
-  'git-fix-merge.sh',
-  'git-setup.sh',
-  'git-setup.js',
-  'git-commands.sh',
-  'merge-branches.js',
-  
-  // Debugging helpers
-  'check-case-sensitivity.js',
-  'frontend/src/utils/debugHelper.js',
-  
-  // Build scripts that are no longer needed
+  // Temporary files
+  'stash-and-checkout.js',
+  'checkout-commit.js',
+  'git-second-last.js',
+  'organize-project.js',
+  'get-commits.js',
   'build-and-deploy.js',
   'build-and-serve.js',
-  'backend-push.js',
-  'frontend-push.js',
-  'create-release.js',
-  'atlas-test.js',
-  'backend/atlas-test.js',
-  'backend/test-connection.js',
-  'backend/test-mongo-connection.js',
-  'backend/install-dependencies.js',
-  'mongodb-atlas-setup.js',
-  'generate-secret.js',
+  'check-case-sensitivity.js',
+  'connection-troubleshooting.md',
+  'git-fix-merge.sh',
+  'git-setup.js',
+  'git-setup.sh',
+  'merge-branches.js',
   
-  // Backup and temporary files
-  'models/User.js',
-  'models/User.js.backup',
-  'models/Candidate.js',
-  'middleware/admin.js',
-  'middleware/auth.js',
-  'routes/candidates.js',
-  'routes/users.js'
+  // Duplicate files
+  'frontend/download-icons.js',
+  
+  // Old model files with uppercase naming (if already renamed)
+  'backend/models/User.js.backup',
+  'backend/models/Candidate.js.backup',
+  
+  // Temporary backend files
+  'backend/start-server.js',
+  'backend/index.js',
+  'backend/checkServer.js'
 ];
 
 // Directories to remove
@@ -145,6 +138,13 @@ function printDir(dir, prefix = '') {
       console.log(`${line}${entry.name}`);
     }
   });
+}
+
+try {
+  printDir(__dirname);
+} catch (err) {
+  console.error('Error showing directory structure:', err);
+}
 }
 
 try {
