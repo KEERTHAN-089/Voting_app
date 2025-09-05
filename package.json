@@ -1,43 +1,32 @@
 {
   "name": "voting-app",
   "version": "1.0.0",
-  "description": "Online Voting Application", 
-  "main": "server.js",
+  "description": "Secure Electronic Voting Application",
+  "main": "index.js",
   "scripts": {
     "start": "node server.js",
-    "client": "react-scripts start",
-    "build": "react-scripts build",
-    "test": "react-scripts test",
-    "eject": "react-scripts eject"
+    "server": "cd backend && npm start",
+    "client": "cd frontend && npm start",
+    "dev": "concurrently \"npm run server\" \"npm run client\"",
+    "install-all": "npm install && cd backend && npm install && cd ../frontend && npm install",
+    "build": "cd frontend && npm run build",
+    "vercel-build": "npm run build",
+    "test": "echo \"Error: no test specified\" && exit 1"
   },
   "dependencies": {
-    "@testing-library/jest-dom": "^5.16.5",
-    "@testing-library/react": "^13.4.0",
-    "@testing-library/user-event": "^13.5.0",
-    "axios": "^1.3.4",
-    "multer": "^1.4.5-lts.1",
-    "react": "^18.2.0",
-    "react-dom": "^18.2.0",
-    "react-router-dom": "^6.8.1",
-    "react-scripts": "5.0.1",
-    "web-vitals": "^2.1.4"
+    "concurrently": "^8.2.0"
   },
-  "eslintConfig": {
-    "extends": [
-      "react-app",
-      "react-app/jest"
-    ]
+  "engines": {
+    "node": ">=14.0.0"
   },
-  "browserslist": {
-    "production": [
-      ">0.2%",
-      "not dead",
-      "not op_mini all"
-    ],
-    "development": [
-      "last 1 chrome version",
-      "last 1 firefox version",
-      "last 1 safari version"
-    ]
-  }
+  "keywords": [
+    "voting",
+    "election",
+    "mern",
+    "react",
+    "node",
+    "mongodb"
+  ],
+  "author": "",
+  "license": "ISC"
 }
