@@ -2,7 +2,7 @@ const express = require('express');
 const router = express.Router();
 const mongoose = require('mongoose');
 const auth = require('../middleware/auth');
-const Candidate = require('../models/Candidate');
+const Candidate = require('../models/candidate');
 const User = require('../models/User');
 
 // Vote for a candidate
