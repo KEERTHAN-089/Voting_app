@@ -97,7 +97,7 @@ const CandidateForm = ({ initialData, onSubmit, onCancel }) => {
       // Create FormData object to handle file upload
       const submitData = new FormData();
       
-      // Add form fields directly - don't nest them
+      // Add form fields
       submitData.append('name', formData.name);
       submitData.append('party', formData.party);
       if (formData.age) {
@@ -112,35 +112,44 @@ const CandidateForm = ({ initialData, onSubmit, onCancel }) => {
         console.log(`Form data: ${key}: ${value instanceof File ? value.name : value}`);
       }
       
-      let result;
-      const apiUrl = initialData ? 
+      // Get token from localStorage
+      const token = localStorage.getItem('token');
+      if (!token) {
+        throw new Error('Authentication required. Please log in.');
+      }
+      
+      // Prepare request
+      const url = initialData ? 
         `http://localhost:3000/candidates/${initialData._id}` : 
         'http://localhost:3000/candidates';
       
-      const method = initialData ? 'PUT' : 'POST';
-      console.log(`Sending ${method} request to ${apiUrl}`);
+      console.log(`Sending ${initialData ? 'PUT' : 'POST'} request to ${url}`);
       
-      const token = localStorage.getItem('token');
-      const headers = {};
-      if (token) {
-        headers['Authorization'] = `Bearer ${token}`;
-      }
+      // Build headers including Authorization token
+      const headers = {
+        'Authorization': `Bearer ${token}`
+      };
       
-      // Use fetch directly
-      const response = await fetch(apiUrl, {
-        method: method,
+      // Don't set Content-Type when using FormData - browser will set it with boundary
+    
+      // Use fetch with proper error handling
+      const response = await fetch(url, {
+        method: initialData ? 'PUT' : 'POST',
         body: submitData,
         headers: headers
       });
       
+      // Handle non-OK responses
       if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || `HTTP error ${response.status}`);
+        const errorData = await response.json().catch(() => ({}));
+        console.error('Server error response:', errorData);
+        throw new Error(errorData.message || `HTTP error ${response.status}: ${response.statusText}`);
       }
       
       const responseData = await response.json();
       console.log('Server response:', responseData);
       
+      // Show success message
       setSuccess(initialData ? 'Candidate updated successfully!' : 'Candidate added successfully!');
       
       // Reset form if adding a new candidate
@@ -151,11 +160,11 @@ const CandidateForm = ({ initialData, onSubmit, onCancel }) => {
       }
       
       // Call parent submit handler if provided
-      if (onSubmit) onSubmit(result);
-      
+      if (onSubmit) onSubmit(responseData);
+    
     } catch (err) {
       console.error('Error submitting form:', err);
-      setError(err.response?.data?.message || 'An error occurred while saving the candidate');
+      setError(err.message || 'An error occurred while saving the candidate');
     } finally {
       setLoading(false);
     }
