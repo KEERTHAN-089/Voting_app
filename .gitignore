@@ -1,0 +1,90 @@
+# Dependencies
+node_modules
+/.pnp
+.pnp.js
+
+# Testing
+/coverage
+
+# Production builds
+/build
+
+# Environment variables - IMPORTANT to exclude these!
+.env
+.env.local
+.env.development
+.env.development.local
+.env.test.local
+.env.production.local
+.env.production
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# IDE files
+.idea/
+.vscode/
+*.sublime-project
+*.sublime-workspace
+.project
+.classpath
+.settings/
+*.swp
+*.swo
+
+# OS files
+.DS_Store
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# User uploads - keep the directory structure but not the content
+/backend/uploads/*
+!/backend/uploads/.gitkeep
+
+# Temporary files
+.tmp/
+temp/
+tmp/
+
+# Debug files
+.pnpm-debug.log*
+
+# JWT keys and certificates (if any)
+*.pem
+*.key
+*.cert
+
+# MongoDB data files (if stored locally)
+/data/db
+
+# Personal configuration files that shouldn't be shared
+config.personal.js
+
+# Package lock files (optional, some teams choose to include these)
+# package-lock.json
+# yarn.lock
+
+# Test data files
+/test/fixtures/
+/mock-data/
+
+# Large binary files
+*.zip
+*.tar.gz
+*.rar
+*.7z
+# package-lock.json
+# yarn.lock
+
+# Test data files
+/test/fixtures/
+/mock-data/
+
+# Large binary files
+*.zip
+*.tar.gz
+*.rar
+*.7z
