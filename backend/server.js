@@ -83,8 +83,29 @@ connectDB().then(connected => {
     console.log('Warning: Running without database connection');
   }
 
-  // Start the server regardless of DB connection status
-  app.listen(PORT, () => {
-    console.log(`Server is running on port ${PORT}`);
-  });
+  // Start the server with better error handling for port conflicts
+  const startServer = (port) => {
+    try {
+      const server = app.listen(port, () => {
+        console.log(`Server is running on port ${port}`);
+      });
+
+      // Handle specific errors
+      server.on('error', (e) => {
+        if (e.code === 'EADDRINUSE') {
+          console.log(`Port ${port} is already in use, trying ${port + 1}...`);
+          server.close();
+          startServer(port + 1);
+        } else {
+          console.error('Server error:', e);
+        }
+      });
+    } catch (error) {
+      console.error('Error starting server:', error);
+      process.exit(1);
+    }
+  };
+
+  // Start with initial port
+  startServer(PORT);
 });

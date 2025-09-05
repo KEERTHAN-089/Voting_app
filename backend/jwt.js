@@ -30,7 +30,9 @@ const generateToken = (payload) => {
         { expiresIn: '1h' }
     );
 }
+
+// Make sure the exports are properly defined
 module.exports = {
-    jwtAuthMiddleware,
-    generateToken
+  jwtAuthMiddleware,
+  generateToken
 };

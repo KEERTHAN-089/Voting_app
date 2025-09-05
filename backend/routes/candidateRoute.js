@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const User = require('../models/user'); // Corrected path to lowercase
+const User = require('../models/User'); // Corrected path to lowercase
 const {jwtAuthMiddleware,generateToken} = require('./../jwt');
 const Candidate = require('../models/candidate'); // Corrected path to lowercase
 const path = require('path');

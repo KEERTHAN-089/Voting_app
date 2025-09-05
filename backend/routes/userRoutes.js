@@ -1,10 +1,8 @@
 const express = require('express');
 const router = express.Router();
 const User = require('../models/user'); // Corrected path to lowercase
-const {jwtAuthMiddleware,generateToken} = require('./../jwt');
+const { jwtAuthMiddleware, generateToken } = require('../jwt'); // Fixed path to jwt.js
 
-
-// Basic test route to confirm router is working
 router.get('/test', (req, res) => {
   res.json({ message: 'User routes are working' });
 });

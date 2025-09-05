@@ -1,5 +1,5 @@
 const mongoose = require('mongoose');
-const bcrypt = require('bcrypt');
+const bcrypt = require('bcrypt'); // Make sure this is 'bcrypt', not 'bcryptjs'
 
 // Export schema definition but don't register the model
 const userSchema = new mongoose.Schema({
