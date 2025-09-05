@@ -1,19 +1,12 @@
 const express = require('express');
 const router = express.Router();
-const User = require('../models/user'); // Corrected path to lowercase
-const {jwtAuthMiddleware,generateToken} = require('./../jwt');
+const User = require('../models/user'); // Add this missing import
+const {jwtAuthMiddleware, generateToken} = require('../jwt'); // Add this missing import
 
-
-// Basic test route to confirm router is working
-router.get('/test', (req, res) => {
-  res.json({ message: 'User routes are working' });
-});
-
+// Signup route
 router.post('/signup', async (req, res) => {
     try {
         const data = req.body;
-        
-        // Validate required fields
         const requiredFields = ['username', 'age', 'email', 'mobile', 'address', 'aadharCardNumber', 'password'];
         const missingFields = requiredFields.filter(field => !data[field]);
         
@@ -65,65 +58,38 @@ router.post('/signup', async (req, res) => {
 // This route allows users to log in using their Aadhar card number and password.
 
 router.post('/login', async (req, res) => {
-  try {
-    console.log('Login attempt with:', req.body);
-    const { aadharCardNumber, password } = req.body;
-
-    if (!aadharCardNumber || !password) {
-      return res.status(400).json({ message: 'Aadhar card number and password are required' });
+    try {
+        const { aadharCardNumber, password } = req.body;
+        const user = await User.findOne({ aadharCardNumber });
+        if (!user) {
+            return res.status(404).json({ message: 'User not found' });
+        }
+        const isMatch = await user.comparePassword(password);
+        if (!isMatch) {
+            return res.status(401).json({ message: 'Invalid credentials' });
+        }
+        const payload = {
+            id: user._id
+        };
+        const token = generateToken(payload);
+        res.status(200).json({
+            user,
+            token
+        });
+    } catch (error) {
+        console.error('Error during login:', error);
+        res.status(500).json({ message: 'Internal server error' });
     }
-
-    // Find user by aadhar card number
-    const user = await User.findOne({ aadharCardNumber });
-    if (!user) {
-      return res.status(401).json({ message: 'Invalid credentials' });
-    }
-
-    // Compare passwords
-    const isMatch = await user.comparePassword(password);
-    if (!isMatch) {
-      return res.status(401).json({ message: 'Invalid credentials' });
-    }
-
-    // Generate JWT token
-    const token = generateToken({ id: user._id });
-
-    res.status(200).json({
-      message: 'Login successful',
-      token,
-      user: {
-        id: user._id,
-        username: user.username,
-        email: user.email,
-        role: user.role,
-        hasVoted: user.isVoted
-      }
-    });
-  } catch (error) {
-    console.error('Error during login:', error);
-    res.status(500).json({ message: 'Server error', error: error.message });
-  }
 });
 
 // Get user profile route
 router.get('/profile', jwtAuthMiddleware, async (req, res) => {
     try {
         const user = await User.findById(req.user.id);
-        if (!user) {
-            return res.status(404).json({ message: 'User not found' });
-        }
-        res.status(200).json({
-            id: user._id,
-            username: user.username,
-            email: user.email,
-            role: user.role,
-            isVoted: user.isVoted,
-            hasVoted: user.hasVoted,
-            votedFor: user.votedFor
-        });
+        res.status(200).json(user);
     } catch (error) {
         console.error('Error fetching user profile:', error);
-        res.status(500).json({ message: 'Internal server error', error: error.message });
+        res.status(500).json({ message: 'Internal server error' });
     }
 });
 

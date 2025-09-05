@@ -1,8 +1,8 @@
 const express = require('express');
 const router = express.Router();
-const User = require('../models/user'); // Corrected path to lowercase
+const User = require('../models/User'); // Actually using lowercase to match the file
 const {jwtAuthMiddleware,generateToken} = require('./../jwt');
-const Candidate = require('../models/candidate'); // Corrected path to lowercase
+const Candidate = require('../models/candidate'); // Already using lowercase
 const path = require('path');
 const fs = require('fs');
 const multer = require('multer');

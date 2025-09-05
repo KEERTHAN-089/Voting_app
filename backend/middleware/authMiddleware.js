@@ -1,5 +1,5 @@
 const jwt = require('jsonwebtoken');
-const User = require('../models/user');
+const User = require('../models/User');
 
 // JWT secret key with fallback
 const JWT_SECRET = process.env.JWT_SECRET || 'voting-app-secure-key-2025';
