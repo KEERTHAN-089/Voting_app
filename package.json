@@ -1,24 +1,8 @@
 {
   "name": "voting-app",
   "version": "1.0.0",
-<<<<<<< HEAD
   "description": "Secure Electronic Voting Application",
-  "main": "index.js",
-=======
-<<<<<<< HEAD
-  "description": "Online Voting Application", 
   "main": "server.js",
-=======
-  "private": true,
-  "dependencies": {
-    "react": "^18.2.0",
-    "react-dom": "^18.2.0",
-    "react-router-dom": "^6.16.0",
-    "react-scripts": "5.0.1",
-    "axios": "^1.5.0"
-  },
->>>>>>> f118baf306327fa3afd0dbdca214b0d55c1f96de
->>>>>>> 1d0b15bd645704b025682460a2025c00811347a0
   "scripts": {
     "start": "node server.js",
     "server": "cd backend && npm start",
@@ -29,21 +13,16 @@
     "vercel-build": "npm run build",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
-<<<<<<< HEAD
   "dependencies": {
     "concurrently": "^8.2.0"
   },
-<<<<<<< HEAD
   "engines": {
     "node": ">=14.0.0"
-=======
-=======
->>>>>>> f118baf306327fa3afd0dbdca214b0d55c1f96de
+  },
   "eslintConfig": {
     "extends": [
       "react-app"
     ]
->>>>>>> 1d0b15bd645704b025682460a2025c00811347a0
   },
   "keywords": [
     "voting",
@@ -56,4 +35,3 @@
   "author": "",
   "license": "ISC"
 }
-  
