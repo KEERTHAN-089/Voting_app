@@ -69,7 +69,7 @@ api.interceptors.response.use(
   }
 );
 
-// Connection diagnostics
+// Connection diagnostics with improved error handling
 export const diagnoseConnection = async () => {
   // Try multiple potential backend URLs
   const potentialUrls = [
@@ -87,18 +87,27 @@ export const diagnoseConnection = async () => {
     try {
       console.log(`Testing connection to: ${url}`);
       const startTime = Date.now();
+      
+      // Try accessing the health endpoint with a short timeout
       const response = await fetch(`${url}/health`, { 
         method: 'GET',
         mode: 'cors',
         headers: { 'Content-Type': 'application/json' },
-        timeout: 3000
+        signal: AbortSignal.timeout(3000) // 3 second timeout
       });
+      
+      // Try to parse the response as JSON, catch parsing errors
+      let data;
+      try {
+        data = await response.json();
+      } catch (parseError) {
+        throw new Error(`Response is not valid JSON: ${parseError.message}`);
+      }
       
       const endTime = Date.now();
       const responseTime = endTime - startTime;
       
       if (response.ok) {
-        const data = await response.json();
         results.push({
           url,
           success: true,
@@ -209,6 +218,20 @@ const deleteCandidate = async (candidateId) => {
   }
 };
 
+// Add updateCandidate function
+const updateCandidate = async (candidateId, candidateData) => {
+  try {
+    if (!candidateId) {
+      throw new Error('Candidate ID is required');
+    }
+    console.log(`Updating candidate with ID: ${candidateId}`, candidateData);
+    return await api.put(`/candidates/${candidateId}`, candidateData);
+  } catch (error) {
+    console.error(`Error updating candidate ${candidateId}:`, error);
+    throw error;
+  }
+};
+
 // Export individual functions
 export { 
   signup, 
@@ -220,7 +243,8 @@ export {
   getElectionResults,
   getProfile,
   login,
-  deleteCandidate  // Add this to the named exports
+  deleteCandidate,
+  updateCandidate  // Add updateCandidate to named exports
 };
 
 // Update the default export object
@@ -237,7 +261,8 @@ const apiDefault = {
   castVote,
   voteForCandidate,
   getElectionResults,
-  deleteCandidate,  // Add this to the default export object
+  deleteCandidate,
+  updateCandidate,  // Add updateCandidate to default exports
   
   // HTTP methods
   get: (url, config) => api.get(url, config),
