@@ -1,0 +1,97 @@
+.dashboard {
+  padding: 20px;
+  max-width: 1000px;
+  margin: 0 auto;
+}
+
+.dashboard h1 {
+  color: #333;
+  margin-bottom: 20px;
+  border-bottom: 2px solid #f0f0f0;
+  padding-bottom: 10px;
+}
+
+.dashboard-info {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 20px;
+  margin-top: 20px;
+}
+
+.user-info,
+.dashboard-actions {
+  flex: 1;
+  min-width: 300px;
+  background-color: #f9f9f9;
+  border-radius: 8px;
+  padding: 20px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.user-info h2,
+.dashboard-actions h2 {
+  color: #444;
+  font-size: 1.5rem;
+  margin-bottom: 15px;
+  border-bottom: 1px solid #eee;
+  padding-bottom: 10px;
+}
+
+.user-info p {
+  margin: 10px 0;
+  font-size: 1.1rem;
+}
+
+.action-buttons {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 15px;
+}
+
+.action-buttons .btn {
+  padding: 12px 20px;
+  font-size: 1rem;
+  text-align: center;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.3s;
+  text-decoration: none;
+  font-weight: bold;
+}
+
+.btn-primary {
+  background-color: #4285f4;
+  color: white;
+  border: none;
+}
+
+.btn-primary:hover {
+  background-color: #3367d6;
+}
+
+.btn-secondary {
+  background-color: #34a853;
+  color: white;
+  border: none;
+}
+
+.btn-secondary:hover {
+  background-color: #2d9249;
+}
+
+.btn-danger {
+  background-color: #ea4335;
+  color: white;
+  border: none;
+}
+
+.btn-danger:hover {
+  background-color: #d33426;
+}
+
+@media (max-width: 768px) {
+  .dashboard-info {
+    flex-direction: column;
+  }
+}

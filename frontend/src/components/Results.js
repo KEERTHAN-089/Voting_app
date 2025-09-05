@@ -17,14 +17,41 @@ const Results = () => {
   const fetchResults = async () => {
     try {
       setLoading(true);
-      const response = await api.getResults();
-      console.log('Vote results:', response.data);
       
-      // Process results data
-      let processedResults = Array.isArray(response.data) ? response.data : [];
+      // First get all candidates to have their full details
+      const candidatesResponse = await api.getCandidates();
+      const candidates = Array.isArray(candidatesResponse.data) ? candidatesResponse.data : [];
       
-      // Sort results based on current sort option
+      // Then get vote counts
+      const voteCountResponse = await api.getVoteCount();
+      let voteCounts = Array.isArray(voteCountResponse.data) ? voteCountResponse.data : [];
+      
+      // Create a map of parties to candidate details
+      const candidateMap = {};
+      candidates.forEach(candidate => {
+        candidateMap[candidate.party] = {
+          name: candidate.name,
+          _id: candidate._id,
+          party: candidate.party
+        };
+      });
+      
+      // Merge vote count data with candidate details
+      let processedResults = voteCounts.map(item => {
+        const candidateInfo = candidateMap[item.party] || {};
+        return {
+          _id: candidateInfo._id || item._id || String(Math.random()),
+          name: candidateInfo.name || item.name || item.party || "Unknown",
+          party: item.party || "Unknown",
+          voteCount: item.voteCount || 0
+        };
+      });
+      
+      // Sort results
       sortResults(processedResults, sortBy);
+      
+      // Log the processed results for debugging
+      console.log('Processed voting results:', processedResults);
       
       setResults(processedResults);
       setError(null);
@@ -128,7 +155,7 @@ const Results = () => {
               {isWinner && <div className="winner-badge">Winner</div>}
               
               <div className="result-header">
-                <h3 className="candidate-name">{name}</h3>
+                <h3 className="candidate-name">{name || party}</h3>
                 <div className="candidate-party">{party}</div>
               </div>
               

@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../utils/api';
+import { toast } from 'react-toastify';
 
 const Login = () => {
   const [formData, setFormData] = useState({
@@ -8,6 +9,7 @@ const Login = () => {
     password: '',
   });
   const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
   const { aadharCardNumber, password } = formData;
@@ -18,23 +20,62 @@ const Login = () => {
 
   const onSubmit = async (e) => {
     e.preventDefault();
+    setLoading(true);
+    setError('');
+    
     try {
-      const response = await api.post('/user/login', {
-        aadharCardNumber,
-        password
-      });
+      console.log('Submitting login with:', { aadharCardNumber });
       
+      // Add connection test before actual login attempt
+      try {
+        const healthCheck = await fetch(`${process.env.REACT_APP_API_URL || 'http://localhost:3000'}/health`);
+        if (healthCheck.ok) {
+          console.log('Backend server is reachable');
+        }
+      } catch (healthError) {
+        console.warn('Backend health check failed:', healthError.message);
+      }
+      
+      const response = await api.login({ aadharCardNumber, password });
+      
+      console.log('Login successful:', response.data);
+      
+      // Store token and user info
       localStorage.setItem('token', response.data.token);
+      localStorage.setItem('user', JSON.stringify(response.data.user));
       
-      // If your login response includes user role
-      if (response.data.user && response.data.user.role === 'admin') {
-        navigate('/admin'); // Redirect to admin dashboard
+      // Show success message and redirect
+      toast.success('Login successful!');
+      
+      // Redirect based on user role
+      if (response.data.user.role === 'admin') {
+        navigate('/admin');
       } else {
-        navigate('/vote'); // Regular users go to voting page
+        navigate('/dashboard');
       }
     } catch (err) {
-      setError(err.response?.data?.message || 'Invalid credentials');
-      console.error(err);
+      console.error('Login failed:', err);
+      
+      // Handle different error types
+      if (err.response) {
+        // Server responded with error
+        if (err.response.status === 401) {
+          setError('Invalid credentials. Please check your Aadhar number and password.');
+        } else if (err.response.status === 404) {
+          setError('Server endpoint not found. Please verify the backend server is running correctly.');
+        } else {
+          setError(err.response.data?.message || 'Login failed. Please try again later.');
+        }
+      } else if (err.request) {
+        // No response received
+        setError(`Cannot connect to server at ${err.config?.baseURL || 'http://localhost:3000'}. Please check if the backend is running and accessible.`);
+        console.error('No response received:', err.request);
+      } else {
+        // Error setting up request
+        setError(`Network error: ${err.message}`);
+      }
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -67,7 +108,9 @@ const Login = () => {
             required
           />
         </div>
-        <button type="submit" className="btn btn-primary">Login</button>
+        <button type="submit" className="btn btn-primary" disabled={loading}>
+          {loading ? 'Logging in...' : 'Login'}
+        </button>
       </form>
     </div>
   );

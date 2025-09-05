@@ -21,7 +21,8 @@ const AdminDashboard = () => {
       }
 
       try {
-        const response = await api.get('/user/profile');
+        // Fix: Use getProfile() instead of api.get()
+        const response = await api.getProfile();
         if (response.data.role !== 'admin') {
           setError('You do not have admin access');
           setIsAdmin(false);
@@ -46,6 +47,7 @@ const AdminDashboard = () => {
       setError('');
       
       console.log('Fetching candidates...');
+      // Fix: Use getCandidates() instead of api.getCandidates()
       const response = await api.getCandidates();
       
       console.log('Candidates response:', response.data);
@@ -61,7 +63,6 @@ const AdminDashboard = () => {
 
   const handleAddCandidate = async (candidateData) => {
     try {
-      // Use the updated endpoint
       await api.createCandidate(candidateData);
       fetchCandidates();
       return { success: true };
@@ -76,7 +77,6 @@ const AdminDashboard = () => {
 
   const handleUpdateCandidate = async (id, candidateData) => {
     try {
-      // Use the updated endpoint
       await api.updateCandidate(id, candidateData);
       setEditingCandidate(null);
       fetchCandidates();

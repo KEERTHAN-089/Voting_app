@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import api from '../utils/api';
+import api from '../utils/api'; // Make sure this import is correct
 
 const Register = () => {
   const [formData, setFormData] = useState({
@@ -14,6 +14,7 @@ const Register = () => {
     confirmPassword: ''
   });
   const [error, setError] = useState('');
+  const [submitting, setSubmitting] = useState(false);
   const navigate = useNavigate();
 
   const { username, age, email, mobile, address, aadharCardNumber, password, confirmPassword } = formData;
@@ -24,52 +25,39 @@ const Register = () => {
 
   const onSubmit = async (e) => {
     e.preventDefault();
-    
-    // Clear previous errors
+    setSubmitting(true);
     setError('');
-    
+
     // Client-side validation
     if (password !== confirmPassword) {
       setError('Passwords do not match');
+      setSubmitting(false);
       return;
     }
     
     // Validate password length
     if (password.length < 6) {
       setError('Password must be at least 6 characters long');
+      setSubmitting(false);
       return;
     }
     
     // Validate Aadhar card number
     if (aadharCardNumber.length !== 12 || !/^\d+$/.test(aadharCardNumber)) {
       setError('Aadhar Card Number must be exactly 12 digits');
+      setSubmitting(false);
       return;
     }
     
     try {
-      // Trim and normalize data before sending
-      const payload = {
-        username: username.trim(),
-        age: parseInt(age, 10),
-        email: email.trim().toLowerCase(),
-        mobile: mobile.trim().replace(/\s+/g, ''),
-        address: address.trim().substring(0, 500), // Limit address to 500 chars
-        aadharCardNumber: aadharCardNumber.trim().replace(/\s+/g, ''),
-        password
-      };
-      
-      console.log("Sending request to:", `/user/signup`);
-      console.log("Request payload:", {
-        ...payload,
-        password: '********'
+      console.log('Sending request to: /user/signup');
+      console.log('Request payload:', {
+        ...formData,
+        password: '********' // Hide password in logs
       });
-      
-      // Reduce unnecessary headers by using a simplified config
-      const response = await api.post('/user/signup', payload, {
-        headers: {
-          'Content-Type': 'application/json'
-        }
-      });
+
+      // Use the signup function from the API
+      const response = await api.signup(formData);
       
       console.log('Registration successful:', response.data);
       navigate('/login');
@@ -78,7 +66,7 @@ const Register = () => {
       
       // Handle specific MongoDB duplicate key error
       if (err.response && err.response.status === 400) {
-        const errorMsg = err.response.data.message || '';
+        const errorMsg = err.response?.data?.message || '';
         
         if (errorMsg.includes('duplicate key') || errorMsg.includes('E11000')) {
           // Check which field is duplicated
@@ -91,6 +79,7 @@ const Register = () => {
           } else {
             setError('This account already exists. Please login instead.');
           }
+          setSubmitting(false);
           return;
         }
       }
@@ -110,6 +99,8 @@ const Register = () => {
         console.error("Error message:", err.message);
         setError(`Request error: ${err.message}`);
       }
+    } finally {
+      setSubmitting(false);
     }
   };
 
@@ -216,7 +207,9 @@ const Register = () => {
           />
         </div>
 
-        <button type="submit" className="btn btn-success">Register</button>
+        <button type="submit" className="btn btn-success" disabled={submitting}>
+          {submitting ? 'Registering...' : 'Register'}
+        </button>
       </form>
     </div>
   );

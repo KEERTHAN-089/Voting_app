@@ -61,6 +61,15 @@ const CandidateForm = ({ initialData, onSubmit, onCancel }) => {
   const handleImageChange = (e) => {
     const file = e.target.files[0];
     if (file) {
+      // Check file size (10MB limit)
+      const maxSize = 10 * 1024 * 1024; // 10MB in bytes
+      if (file.size > maxSize) {
+        setError(`Image file is too large (${(file.size / (1024 * 1024)).toFixed(2)}MB). Maximum size is 10MB.`);
+        e.target.value = ''; // Clear the file input
+        return;
+      }
+      
+      setError(''); // Clear any previous errors
       setImage(file);
       
       // Create preview URL
@@ -87,6 +96,8 @@ const CandidateForm = ({ initialData, onSubmit, onCancel }) => {
     try {
       // Create FormData object to handle file upload
       const submitData = new FormData();
+      
+      // Add form fields directly - don't nest them
       submitData.append('name', formData.name);
       submitData.append('party', formData.party);
       if (formData.age) {
@@ -96,20 +107,39 @@ const CandidateForm = ({ initialData, onSubmit, onCancel }) => {
         submitData.append('image', image);
       }
       
-      let result;
-      if (initialData) {
-        // Update existing candidate
-        const response = await api.put(`/api/candidates/${initialData._id}`, submitData, {
-          headers: { 'Content-Type': 'multipart/form-data' }
-        });
-        result = { success: true, data: response.data };
-      } else {
-        // Create new candidate
-        const response = await api.post('/api/candidates', submitData, {
-          headers: { 'Content-Type': 'multipart/form-data' }
-        });
-        result = { success: true, data: response.data };
+      // Log FormData contents for debugging
+      for (let [key, value] of submitData.entries()) {
+        console.log(`Form data: ${key}: ${value instanceof File ? value.name : value}`);
       }
+      
+      let result;
+      const apiUrl = initialData ? 
+        `http://localhost:3000/candidates/${initialData._id}` : 
+        'http://localhost:3000/candidates';
+      
+      const method = initialData ? 'PUT' : 'POST';
+      console.log(`Sending ${method} request to ${apiUrl}`);
+      
+      const token = localStorage.getItem('token');
+      const headers = {};
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+      }
+      
+      // Use fetch directly
+      const response = await fetch(apiUrl, {
+        method: method,
+        body: submitData,
+        headers: headers
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || `HTTP error ${response.status}`);
+      }
+      
+      const responseData = await response.json();
+      console.log('Server response:', responseData);
       
       setSuccess(initialData ? 'Candidate updated successfully!' : 'Candidate added successfully!');
       
@@ -221,3 +251,5 @@ const CandidateForm = ({ initialData, onSubmit, onCancel }) => {
 };
 
 export default CandidateForm;
+
+

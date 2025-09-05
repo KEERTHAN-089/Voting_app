@@ -14,47 +14,27 @@ const VotingPage = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    // Check if user is authenticated (has token)
-    const token = localStorage.getItem('token');
-    if (!token) {
-      navigate('/login');
-      return;
-    }
-    
-    // First check if the user has already voted
     const checkVoteStatus = async () => {
       try {
         console.log('Checking if user has already voted...');
-        const response = await api.get('/user/vote/status');
-        console.log('Vote status response:', response.data);
-        
-        // If hasVoted or isVoted is true, user has already voted
-        if (response.data && (response.data.hasVoted === true || response.data.isVoted === true)) {
-          console.log('User has already voted');
+        const voteStatus = await api.checkVoteStatus();
+        if (voteStatus.hasVoted) {
           setHasVoted(true);
           setLoading(false);
         } else {
-          console.log('User has not voted yet, fetching candidates');
-          // Only fetch candidates if the user hasn't voted
           fetchCandidates();
         }
       } catch (err) {
         console.error('Error checking vote status:', err);
-        // If we can't determine vote status, proceed with fetching candidates
-        fetchCandidates();
+        setError('Failed to check vote status. Please try again later.');
+        setLoading(false);
       }
     };
-    
-    // Fetch candidates from the database
+
     const fetchCandidates = async () => {
       try {
         setLoading(true);
-        setError(null);
-        
-        // Use the API utility's getCandidates method instead of direct axios call
         const response = await api.getCandidates();
-        
-        console.log('Candidates data:', response.data);
         setCandidates(Array.isArray(response.data) ? response.data : []);
       } catch (err) {
         console.error('Error fetching candidates:', err);
@@ -64,13 +44,11 @@ const VotingPage = () => {
       }
     };
 
-    // Check vote status first
     checkVoteStatus();
   }, [navigate]);
 
   const handleVoteSubmit = async (e) => {
     e.preventDefault();
-    
     if (!selectedCandidate) {
       setError('Please select a candidate to vote.');
       return;
@@ -79,35 +57,38 @@ const VotingPage = () => {
     try {
       setVoting(true);
       setError('');
-      
       console.log('Submitting vote for candidate:', selectedCandidate);
-      
-      // Submit the vote
       const response = await api.voteForCandidate(selectedCandidate);
-      console.log('Vote response:', response.data);
-      
-      // Update UI state
       setHasVoted(true);
       setVoteSubmitted(true);
       setSuccessMessage('Your vote has been successfully recorded!');
-      
-      // Record in localStorage as a backup
-      localStorage.setItem('hasVoted', 'true');
-      localStorage.setItem('votedAt', new Date().toISOString());
-      
-      // Redirect to results page after delay
-      setTimeout(() => {
-        navigate('/results');
-      }, 3000);
+      setTimeout(() => navigate('/results'), 3000);
     } catch (err) {
       console.error('Error submitting vote:', err);
       
-      // Specific error handling
-      if (err.response?.status === 403) {
-        setError('You have already cast your vote in this election.');
-        setHasVoted(true); // Update UI to reflect voted state
+      // Enhanced error handling with detailed information
+      if (err.response) {
+        // Server responded with an error status
+        if (err.response.status === 403) {
+          setError('You have already cast your vote in this election.');
+          setHasVoted(true);
+        } else if (err.response.status === 500) {
+          console.error('Server error details:', err.response.data);
+          setError('Server error. Please try again later or contact support.');
+        } else if (err.response.status === 401) {
+          setError('Your session has expired. Please log in again.');
+          setTimeout(() => navigate('/login'), 2000);
+        } else {
+          setError(err.response?.data?.message || 'Failed to submit vote. Please try again.');
+        }
+      } else if (err.request) {
+        // Request was made but no response received
+        console.error('No response received:', err.request);
+        setError('No response from server. Please check your connection and try again.');
       } else {
-        setError(err.response?.data?.message || 'Failed to submit vote. Please try again.');
+        // Error setting up the request
+        console.error('Request setup error:', err.message);
+        setError(`Network error: ${err.message}`);
       }
     } finally {
       setVoting(false);
