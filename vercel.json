@@ -25,24 +25,16 @@
       "dest": "backend/server.js"
     },
     {
-      "src": "/(.*\\.(js|css|png|jpg|svg|ico))",
-      "dest": "frontend/build/$1"
-    },
-    {
-      "src": "/(.*)",
-      "dest": "frontend/build/index.html"
-    }
-  ],
-  "env": {
-    "MONGODB_URI": "@mongodb-uri"
-  }
-}
       "src": "/static/(.*)",
       "dest": "frontend/build/static/$1"
     },
     {
       "src": "/manifest.json",
       "dest": "frontend/build/manifest.json"
+    },
+    {
+      "src": "/(.*\\.(js|css|png|jpg|svg|ico))",
+      "dest": "frontend/build/$1"
     },
     {
       "src": "/(.*)",
