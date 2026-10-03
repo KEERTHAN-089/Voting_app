@@ -1,0 +1,279 @@
+/*
+ * Design tokens: the single source of truth for colour, type, spacing and motion.
+ * Every other stylesheet reads from here, so a change made once applies everywhere.
+ *
+ * Colours are declared in two layers:
+ *   1. A fixed palette (--blue-600, --slate-900, ...) that never changes.
+ *   2. Semantic tokens (--bg, --text, --primary, ...) that point at palette values
+ *      and are re-pointed for dark mode. Components only ever use layer 2.
+ */
+
+:root {
+  /* ---- Palette ------------------------------------------------------- */
+  --blue-50: #eff6ff;
+  --blue-100: #dbeafe;
+  --blue-200: #bfdbfe;
+  --blue-400: #60a5fa;
+  --blue-500: #3b82f6;
+  --blue-600: #2563eb;
+  --blue-700: #1e40af;
+  --blue-800: #1e3a8a;
+
+  --green-50: #ecfdf5;
+  --green-400: #34d399;
+  --green-600: #16a34a;
+  --green-700: #15803d;
+  --green-800: #166534;
+
+  --amber-50: #fffbeb;
+  --amber-400: #fbbf24;
+  --amber-500: #f59e0b;
+  --amber-700: #b45309;
+  --amber-900: #78350f;
+
+  --red-50: #fef2f2;
+  --red-400: #f87171;
+  --red-600: #dc2626;
+  --red-700: #b91c1c;
+  --red-900: #7f1d1d;
+
+  --slate-50: #f8fafc;
+  --slate-100: #f1f5f9;
+  --slate-200: #e2e8f0;
+  --slate-300: #cbd5e1;
+  --slate-400: #94a3b8;
+  --slate-500: #64748b;
+  --slate-600: #475569;
+  --slate-700: #334155;
+  --slate-800: #1e293b;
+  --slate-900: #0f172a;
+
+  /* ---- Semantic colour: light ---------------------------------------- */
+  --bg: #f4f7fc;
+  --bg-accent: radial-gradient(1100px 560px at 50% -300px, var(--blue-100), transparent 70%);
+  --surface: #ffffff;
+  --surface-2: var(--slate-50);
+  --surface-3: var(--slate-100);
+
+  --text: var(--slate-900);
+  --text-muted: var(--slate-600);
+  --text-subtle: var(--slate-500);
+  --text-on-primary: #ffffff;
+
+  --border: var(--slate-200);
+  --border-strong: var(--slate-300);
+
+  --primary: var(--blue-700);
+  --primary-hover: var(--blue-800);
+  --primary-soft: var(--blue-50);
+  --primary-soft-text: var(--blue-800);
+
+  --success: var(--green-600);
+  --success-hover: var(--green-700);
+  --success-soft: var(--green-50);
+  --success-soft-text: var(--green-800);
+
+  --warning: var(--amber-700);
+  --warning-soft: var(--amber-50);
+  --warning-soft-text: var(--amber-900);
+
+  --danger: var(--red-600);
+  --danger-hover: var(--red-700);
+  --danger-soft: var(--red-50);
+  --danger-soft-text: var(--red-900);
+
+  --ring: var(--blue-600);
+
+  /* Ranking series. Distinct in hue *and* lightness, so bars stay tellable
+     apart in greyscale and for colour-blind readers. */
+  --series-1: var(--blue-700);
+  --series-2: #0891b2;
+  --series-3: var(--amber-500);
+  --series-4: #7c3aed;
+  --series-rest: var(--slate-500);
+
+  /* ---- Elevation ------------------------------------------------------ */
+  --shadow-xs: 0 1px 2px rgba(15, 23, 42, 0.06);
+  --shadow-sm: 0 1px 3px rgba(15, 23, 42, 0.07), 0 1px 2px rgba(15, 23, 42, 0.04);
+  --shadow-md: 0 4px 12px rgba(15, 23, 42, 0.07), 0 2px 4px rgba(15, 23, 42, 0.04);
+  --shadow-lg: 0 12px 32px rgba(15, 23, 42, 0.1), 0 4px 8px rgba(15, 23, 42, 0.04);
+  --shadow-primary: 0 6px 18px rgba(30, 64, 175, 0.26);
+
+  /* ---- Type ----------------------------------------------------------- */
+  --font-display: Outfit, "Segoe UI", system-ui, -apple-system, sans-serif;
+  --font-body: "Work Sans", "Segoe UI", system-ui, -apple-system, sans-serif;
+  --font-mono: ui-monospace, "Cascadia Mono", Menlo, Consolas, monospace;
+
+  /* Fluid where a headline benefits from it, fixed where consistency matters more. */
+  --text-xs: 0.78rem;
+  --text-sm: 0.875rem;
+  --text-base: 1rem;
+  --text-lg: 1.125rem;
+  --text-xl: clamp(1.2rem, 1.1rem + 0.5vw, 1.375rem);
+  --text-2xl: clamp(1.45rem, 1.3rem + 0.8vw, 1.75rem);
+  --text-3xl: clamp(1.8rem, 1.5rem + 1.4vw, 2.4rem);
+  --text-4xl: clamp(2.1rem, 1.6rem + 2.4vw, 3.1rem);
+
+  --leading-tight: 1.15;
+  --leading-snug: 1.35;
+  --leading-normal: 1.6;
+  --tracking-tight: -0.02em;
+  --tracking-wide: 0.08em;
+
+  /* ---- Space ---------------------------------------------------------- */
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-3: 0.75rem;
+  --space-4: 1rem;
+  --space-5: 1.5rem;
+  --space-6: 2rem;
+  --space-7: 3rem;
+  --space-8: 4rem;
+
+  /* ---- Shape ---------------------------------------------------------- */
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 14px;
+  --radius-xl: 20px;
+  --radius-full: 999px;
+
+  /* ---- Motion --------------------------------------------------------- */
+  --ease: cubic-bezier(0.4, 0, 0.2, 1);
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --dur-fast: 120ms;
+  --dur: 180ms;
+  --dur-slow: 320ms;
+
+  /* ---- Layout --------------------------------------------------------- */
+  --page-max: 1120px;
+  --page-narrow: 560px;
+
+  color-scheme: light;
+}
+
+/*
+ * Dark mode. The same block is declared twice on purpose: once for people whose
+ * system asks for dark (but who have not overridden it in the app), and once for
+ * the in-app toggle, so the toggle wins in both directions.
+ */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #080d1a;
+    --bg-accent: radial-gradient(1100px 560px at 50% -300px, rgba(37, 99, 235, 0.22), transparent 70%);
+    --surface: #101829;
+    --surface-2: #162035;
+    --surface-3: #1d2942;
+
+    --text: #e9eefb;
+    --text-muted: #a3b0c9;
+    --text-subtle: #8593ad;
+    --text-on-primary: #061024;
+
+    --border: #263349;
+    --border-strong: #35445f;
+
+    --primary: var(--blue-400);
+    --primary-hover: #93c5fd;
+    --primary-soft: rgba(96, 165, 250, 0.14);
+    --primary-soft-text: #bfdbfe;
+
+    --success: var(--green-400);
+    --success-hover: #6ee7b7;
+    --success-soft: rgba(52, 211, 153, 0.14);
+    --success-soft-text: #a7f3d0;
+
+    --warning: var(--amber-400);
+    --warning-soft: rgba(251, 191, 36, 0.14);
+    --warning-soft-text: #fde68a;
+
+    --danger: var(--red-400);
+    --danger-hover: #fca5a5;
+    --danger-soft: rgba(248, 113, 113, 0.14);
+    --danger-soft-text: #fecaca;
+
+    --ring: var(--blue-400);
+
+    --series-1: var(--blue-400);
+    --series-2: #22d3ee;
+    --series-3: var(--amber-400);
+    --series-4: #a78bfa;
+    --series-rest: var(--slate-400);
+
+    --shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.4);
+    --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.45);
+    --shadow-md: 0 4px 14px rgba(0, 0, 0, 0.5);
+    --shadow-lg: 0 16px 40px rgba(0, 0, 0, 0.55);
+    --shadow-primary: 0 6px 18px rgba(96, 165, 250, 0.22);
+
+    color-scheme: dark;
+  }
+}
+
+:root[data-theme="dark"] {
+  --bg: #080d1a;
+  --bg-accent: radial-gradient(1100px 560px at 50% -300px, rgba(37, 99, 235, 0.22), transparent 70%);
+  --surface: #101829;
+  --surface-2: #162035;
+  --surface-3: #1d2942;
+
+  --text: #e9eefb;
+  --text-muted: #a3b0c9;
+  --text-subtle: #8593ad;
+  --text-on-primary: #061024;
+
+  --border: #263349;
+  --border-strong: #35445f;
+
+  --primary: var(--blue-400);
+  --primary-hover: #93c5fd;
+  --primary-soft: rgba(96, 165, 250, 0.14);
+  --primary-soft-text: #bfdbfe;
+
+  --success: var(--green-400);
+  --success-hover: #6ee7b7;
+  --success-soft: rgba(52, 211, 153, 0.14);
+  --success-soft-text: #a7f3d0;
+
+  --warning: var(--amber-400);
+  --warning-soft: rgba(251, 191, 36, 0.14);
+  --warning-soft-text: #fde68a;
+
+  --danger: var(--red-400);
+  --danger-hover: #fca5a5;
+  --danger-soft: rgba(248, 113, 113, 0.14);
+  --danger-soft-text: #fecaca;
+
+  --ring: var(--blue-400);
+
+  --series-1: var(--blue-400);
+  --series-2: #22d3ee;
+  --series-3: var(--amber-400);
+  --series-4: #a78bfa;
+  --series-rest: var(--slate-400);
+
+  --shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.4);
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.45);
+  --shadow-md: 0 4px 14px rgba(0, 0, 0, 0.5);
+  --shadow-lg: 0 16px 40px rgba(0, 0, 0, 0.55);
+  --shadow-primary: 0 6px 18px rgba(96, 165, 250, 0.22);
+
+  color-scheme: dark;
+}
+
+/* Anyone who has asked their system to reduce motion gets the end state at once. */
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --dur-fast: 0.01ms;
+    --dur: 0.01ms;
+    --dur-slow: 0.01ms;
+  }
+
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

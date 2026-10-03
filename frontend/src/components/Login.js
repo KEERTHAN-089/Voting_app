@@ -1,117 +1,134 @@
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import api from '../utils/api';
-import { toast } from 'react-toastify';
+import React, { useEffect, useState } from 'react';
+import { Navigate, useNavigate, useSearchParams } from 'react-router-dom';
+import api, { errorMessage } from '../utils/api';
+import { useAuth } from '../utils/AuthContext';
+import Icon from './Icon';
+
+const RESEND_WAIT_SECONDS = 60;
 
 const Login = () => {
-  const [formData, setFormData] = useState({
-    aadharCardNumber: '',
-    password: '',
-  });
+  const [step, setStep] = useState('email');
+  const [email, setEmail] = useState('');
+  const [code, setCode] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [resendIn, setResendIn] = useState(0);
+  const { user, signIn } = useAuth();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
 
-  const { aadharCardNumber, password } = formData;
+  // Go back to where the user came from (for example a join link), but only within this site
+  const requested = searchParams.get('next') || '';
+  const next = requested.startsWith('/') && !requested.startsWith('//') ? requested : '/dashboard';
+  // Arriving from a join link: tell the server which session, so the email can name it
+  const joinCode = (next.match(/^\/join\/([A-Za-z0-9]+)$/) || [])[1];
 
-  const onChange = (e) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
-  };
+  useEffect(() => {
+    if (resendIn <= 0) return undefined;
+    const timer = setTimeout(() => setResendIn(resendIn - 1), 1000);
+    return () => clearTimeout(timer);
+  }, [resendIn]);
 
-  const onSubmit = async (e) => {
-    e.preventDefault();
+  if (user) return <Navigate to={next} replace />;
+
+  const requestCode = async () => {
     setLoading(true);
     setError('');
-    
     try {
-      console.log('Submitting login with:', { aadharCardNumber });
-      
-      // Add connection test before actual login attempt
-      try {
-        const healthCheck = await fetch(`${process.env.REACT_APP_API_URL || 'http://localhost:3000'}/health`);
-        if (healthCheck.ok) {
-          console.log('Backend server is reachable');
-        }
-      } catch (healthError) {
-        console.warn('Backend health check failed:', healthError.message);
-      }
-      
-      const response = await api.login({ aadharCardNumber, password });
-      
-      console.log('Login successful:', response.data);
-      
-      // Store token and user info
-      localStorage.setItem('token', response.data.token);
-      localStorage.setItem('user', JSON.stringify(response.data.user));
-      
-      // Show success message and redirect
-      toast.success('Login successful!');
-      
-      // Redirect based on user role
-      if (response.data.user.role === 'admin') {
-        navigate('/admin');
-      } else {
-        navigate('/dashboard');
-      }
+      await api.post('/auth/request-code', { email, joinCode });
+      setStep('code');
+      setCode('');
+      setResendIn(RESEND_WAIT_SECONDS);
     } catch (err) {
-      console.error('Login failed:', err);
-      
-      // Handle different error types
-      if (err.response) {
-        // Server responded with error
-        if (err.response.status === 401) {
-          setError('Invalid credentials. Please check your Aadhar number and password.');
-        } else if (err.response.status === 404) {
-          setError('Server endpoint not found. Please verify the backend server is running correctly.');
-        } else {
-          setError(err.response.data?.message || 'Login failed. Please try again later.');
-        }
-      } else if (err.request) {
-        // No response received
-        setError(`Cannot connect to server at ${err.config?.baseURL || 'http://localhost:3000'}. Please check if the backend is running and accessible.`);
-        console.error('No response received:', err.request);
-      } else {
-        // Error setting up request
-        setError(`Network error: ${err.message}`);
+      if (err.response?.status === 429 && err.response.data?.retryAfterSeconds) {
+        // A code was sent moments ago: let them enter it
+        setStep('code');
+        setResendIn(err.response.data.retryAfterSeconds);
       }
+      setError(errorMessage(err));
     } finally {
       setLoading(false);
     }
   };
 
+  const verifyCode = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+    setError('');
+    try {
+      const response = await api.post('/auth/verify-code', { email, code });
+      signIn(response.data.token, response.data.user);
+      navigate(next, { replace: true });
+    } catch (err) {
+      const left = err.response?.data?.attemptsLeft;
+      setError(left !== undefined ? `Wrong code. ${left} attempt${left === 1 ? '' : 's'} left.` : errorMessage(err));
+      setLoading(false);
+    }
+  };
+
+  if (step === 'email') {
+    return (
+      <div className="login-container">
+        <h2>Sign in</h2>
+        <p className="form-hint">We will email you a 6-digit code. No password needed.</p>
+        {error && <div className="alert alert-danger" role="alert">{error}</div>}
+        <form onSubmit={(e) => { e.preventDefault(); requestCode(); }}>
+          <div className="form-group">
+            <label htmlFor="email">Email address</label>
+            <input
+              type="email"
+              id="email"
+              name="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              autoComplete="email"
+              autoFocus
+              required
+            />
+          </div>
+          <button type="submit" className="btn btn-primary btn-lg" disabled={loading}>
+            <Icon name="mail" />
+            {loading ? 'Sending...' : 'Send code'}
+          </button>
+        </form>
+      </div>
+    );
+  }
+
   return (
     <div className="login-container">
-      <h2>Login to Vote</h2>
-      {error && <div className="alert alert-danger">{error}</div>}
-      <form onSubmit={onSubmit}>
+      <h2>Enter your code</h2>
+      <p className="form-hint">We sent a 6-digit code to <strong>{email}</strong>. It expires in 10 minutes.</p>
+      {error && <div className="alert alert-danger" role="alert">{error}</div>}
+      <form onSubmit={verifyCode}>
         <div className="form-group">
-          <label htmlFor="aadharCardNumber">Aadhar Card Number</label>
+          <label htmlFor="code">6-digit code</label>
           <input
             type="text"
-            id="aadharCardNumber"
-            name="aadharCardNumber"
-            value={aadharCardNumber}
-            onChange={onChange}
-            required
-            pattern="[0-9]{12}"
-            title="Aadhar Card should be 12 digits"
-          />
-        </div>
-        <div className="form-group">
-          <label htmlFor="password">Password</label>
-          <input
-            type="password"
-            id="password"
-            name="password"
-            value={password}
-            onChange={onChange}
+            id="code"
+            name="code"
+            className="code-input"
+            value={code}
+            onChange={(e) => setCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
+            inputMode="numeric"
+            autoComplete="one-time-code"
+            pattern="[0-9]{6}"
+            autoFocus
             required
           />
         </div>
-        <button type="submit" className="btn btn-primary" disabled={loading}>
-          {loading ? 'Logging in...' : 'Login'}
+        <button type="submit" className="btn btn-primary btn-lg" disabled={loading || code.length !== 6}>
+          {loading ? 'Checking...' : 'Sign in'}
         </button>
       </form>
+      <div className="login-links">
+        <button type="button" className="btn-link" onClick={requestCode} disabled={loading || resendIn > 0}>
+          {resendIn > 0 ? `Send a new code in ${resendIn}s` : 'Send a new code'}
+        </button>
+        <button type="button" className="btn-link" onClick={() => { setStep('email'); setError(''); }}>
+          Use a different email
+        </button>
+      </div>
     </div>
   );
 };

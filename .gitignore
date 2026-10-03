@@ -8,6 +8,16 @@ node_modules
 
 # Production builds
 /build
+/frontend/build
+
+# Which Azure web app `npm run azure:deploy` uploads to (written by azure:setup)
+/.azure-app.json
+/deploy/app.zip
+/deploy/package/
+/deploy/app-settings.env
+
+# Face-recognition files copied from node_modules by frontend/scripts/copy-face-models.js
+/frontend/public/models
 
 # Environment variables - IMPORTANT to exclude these!
 .env

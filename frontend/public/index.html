@@ -4,17 +4,37 @@
     <meta charset="utf-8" />
     <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🗳️</text></svg>" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <meta name="theme-color" content="#000000" />
-    <meta
-      name="description"
-      content="Online Voting Application"
-    />
+    <meta name="theme-color" content="#f4f7fc" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#080d1a" media="(prefers-color-scheme: dark)" />
+    <meta name="description" content="Create a voting session, share a QR code, and watch the results come in." />
     <title>Voting App</title>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css" />
+
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&family=Work+Sans:wght@400;500;600&display=swap"
+    />
+
+    <script>
+      /*
+       * Apply the saved theme before the first paint. Without this the page
+       * renders light for a frame and then flips, which reads as a flicker.
+       */
+      (function () {
+        try {
+          var saved = localStorage.getItem('voting-app-theme');
+          if (saved === 'light' || saved === 'dark') {
+            document.documentElement.setAttribute('data-theme', saved);
+          }
+        } catch (e) {
+          /* storage can be blocked; the system preference still applies */
+        }
+      })();
+    </script>
   </head>
   <body>
     <noscript>You need to enable JavaScript to run this app.</noscript>
     <div id="root"></div>
   </body>
-</html>
 </html>

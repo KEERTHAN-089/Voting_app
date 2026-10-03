@@ -1,237 +1,282 @@
-import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import api from '../utils/api';
+import React, { useCallback, useEffect, useState } from 'react';
+import { Link, useNavigate, useParams } from 'react-router-dom';
+import api, { errorMessage, imageUrl } from '../utils/api';
+import usePolling from '../utils/usePolling';
+import SelfieCapture from './SelfieCapture';
+import Icon from './Icon';
 
 const VotingPage = () => {
+  const { id } = useParams();
+  const [election, setElection] = useState(null);
   const [candidates, setCandidates] = useState([]);
   const [selectedCandidate, setSelectedCandidate] = useState('');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const [voteSubmitted, setVoteSubmitted] = useState(false);
+  const [notAllowed, setNotAllowed] = useState('');
   const [hasVoted, setHasVoted] = useState(false);
+  const [voteSubmitted, setVoteSubmitted] = useState(false);
+  // 'choose' -> 'confirm' -> 'selfie' (only if the session asks for one)
+  const [step, setStep] = useState('choose');
   const [voting, setVoting] = useState(false);
-  const [successMessage, setSuccessMessage] = useState('');
   const navigate = useNavigate();
 
-  useEffect(() => {
-    const checkVoteStatus = async () => {
-      try {
-        console.log('Checking if user has already voted...');
-        const voteStatus = await api.checkVoteStatus();
-        if (voteStatus.hasVoted) {
-          setHasVoted(true);
-          setLoading(false);
-        } else {
-          fetchCandidates();
-        }
-      } catch (err) {
-        console.error('Error checking vote status:', err);
-        setError('Failed to check vote status. Please try again later.');
-        setLoading(false);
+  const loadBallot = useCallback(async () => {
+    try {
+      const response = await api.get(`/elections/${id}/ballot`);
+      setElection(response.data.election);
+      setCandidates(response.data.candidates);
+      setHasVoted(response.data.hasVoted);
+    } catch (err) {
+      if (err.response?.status === 403 || err.response?.status === 404) {
+        setNotAllowed(errorMessage(err));
+      } else {
+        setError(errorMessage(err, 'Failed to load the ballot. Please try again later.'));
       }
-    };
-
-    const fetchCandidates = async () => {
-      try {
-        setLoading(true);
-        const response = await api.getCandidates();
-        setCandidates(Array.isArray(response.data) ? response.data : []);
-      } catch (err) {
-        console.error('Error fetching candidates:', err);
-        setError('Failed to load candidates. Please try again later.');
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    checkVoteStatus();
-  }, [navigate]);
-
-  const handleVoteSubmit = async (e) => {
-    e.preventDefault();
-    if (!selectedCandidate) {
-      setError('Please select a candidate to vote.');
-      return;
+    } finally {
+      setLoading(false);
     }
+  }, [id]);
 
+  useEffect(() => {
+    loadBallot();
+  }, [loadBallot]);
+
+  // If voting has not started, keep checking until the organizer opens the session
+  usePolling(loadBallot, 5000, election?.status === 'draft');
+
+  const resultsVisible = election && (election.resultsVisible === 'live' || election.status === 'closed');
+  const chosen = candidates.find((candidate) => candidate._id === selectedCandidate);
+
+  const submitVote = async (selfie) => {
     try {
       setVoting(true);
       setError('');
-      console.log('Submitting vote for candidate:', selectedCandidate);
-      const response = await api.voteForCandidate(selectedCandidate);
+      await api.post(`/elections/${id}/vote`, {
+        candidateId: selectedCandidate,
+        ...(selfie && { selfie: selfie.dataUrl, faceDescriptor: selfie.faceDescriptor })
+      });
       setHasVoted(true);
       setVoteSubmitted(true);
-      setSuccessMessage('Your vote has been successfully recorded!');
-      setTimeout(() => navigate('/results'), 3000);
+      if (election.resultsVisible === 'live') {
+        setTimeout(() => navigate(`/elections/${id}/results`), 3000);
+      }
     } catch (err) {
       console.error('Error submitting vote:', err);
-      
-      // Enhanced error handling with detailed information
-      if (err.response) {
-        // Server responded with an error status
-        if (err.response.status === 403) {
-          setError('You have already cast your vote in this election.');
-          setHasVoted(true);
-        } else if (err.response.status === 500) {
-          console.error('Server error details:', err.response.data);
-          setError('Server error. Please try again later or contact support.');
-        } else if (err.response.status === 401) {
-          setError('Your session has expired. Please log in again.');
-          setTimeout(() => navigate('/login'), 2000);
-        } else {
-          setError(err.response?.data?.message || 'Failed to submit vote. Please try again.');
-        }
-      } else if (err.request) {
-        // Request was made but no response received
-        console.error('No response received:', err.request);
-        setError('No response from server. Please check your connection and try again.');
-      } else {
-        // Error setting up the request
-        console.error('Request setup error:', err.message);
-        setError(`Network error: ${err.message}`);
+      if (err.response?.status === 409) {
+        // Already voted, or the session is no longer open: reload to show the right state
+        setStep('choose');
+        await loadBallot();
       }
+      setError(errorMessage(err, 'Failed to submit vote. Please try again.'));
     } finally {
       setVoting(false);
     }
   };
 
+  const onConfirm = () => {
+    if (election.selfieMode === 'none') submitVote();
+    else setStep('selfie');
+  };
+
+  if (loading) {
+    return (
+      <div className="voting-container">
+        <div className="loading-container">
+          <div className="spinner"></div>
+          <p>Loading ballot...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (notAllowed) {
+    return (
+      <div className="voting-container">
+        <div className="alert alert-danger" role="alert">
+          <Icon name="alertCircle" />
+          <div>{notAllowed}</div>
+        </div>
+        <Link to="/dashboard" className="btn btn-primary">
+          <Icon name="arrowLeft" />
+          Back to my sessions
+        </Link>
+      </div>
+    );
+  }
+
+  if (!election) {
+    return (
+      <div className="voting-container">
+        <div className="alert alert-danger" role="alert">
+          <Icon name="alertCircle" />
+          <div>{error}</div>
+        </div>
+      </div>
+    );
+  }
+
+  const renderBody = () => {
+    if (voteSubmitted) {
+      return (
+        <div className="vote-success">
+          <div className="check-animation" aria-hidden="true">
+            <Icon name="check" size={44} strokeWidth={2.4} />
+          </div>
+          <h3>Vote submitted</h3>
+          <p>Thank you for taking part.</p>
+          {election.resultsVisible === 'live'
+            ? <p className="muted">Taking you to the results...</p>
+            : <p className="muted">Results will be shown when the organizer closes the session.</p>}
+        </div>
+      );
+    }
+
+    if (hasVoted) {
+      return (
+        <div className="state-panel">
+          <span className="state-icon state-icon-success" aria-hidden="true">
+            <Icon name="checkCircle" size={26} />
+          </span>
+          <h3>You have already cast your vote</h3>
+          <p>Each voter can only vote once. Thank you for taking part!</p>
+          {resultsVisible && (
+            <button onClick={() => navigate(`/elections/${id}/results`)} className="btn btn-primary">
+              <Icon name="barChart" />
+              View results
+            </button>
+          )}
+        </div>
+      );
+    }
+
+    if (election.status === 'draft') {
+      return (
+        <div className="state-panel">
+          <span className="state-icon" aria-hidden="true"><Icon name="clock" size={26} /></span>
+          <h3>Voting has not started yet</h3>
+          <p>Keep this page open. The ballot will appear when the organizer opens the session.</p>
+        </div>
+      );
+    }
+
+    if (election.status === 'closed') {
+      return (
+        <div className="state-panel">
+          <span className="state-icon" aria-hidden="true"><Icon name="lock" size={26} /></span>
+          <h3>Voting has closed</h3>
+          <Link to={`/elections/${id}/results`} className="btn btn-primary">
+            <Icon name="barChart" />
+            View results
+          </Link>
+        </div>
+      );
+    }
+
+    if (step === 'selfie') {
+      return (
+        <div className="confirm-box">
+          <h3>Take a selfie to cast your vote for {chosen.name}</h3>
+          <SelfieCapture
+            withFace={election.selfieMode === 'faceMatch'}
+            onCapture={submitVote}
+            onCancel={() => setStep('confirm')}
+            busy={voting}
+            confirmLabel="Cast my vote"
+          />
+        </div>
+      );
+    }
+
+    if (step === 'confirm') {
+      return (
+        <div className="confirm-box">
+          <span className="state-icon" aria-hidden="true"><Icon name="ballot" size={26} /></span>
+          <h3>You are voting for {chosen.name}</h3>
+          <p className="muted">You can vote only once, and a vote cannot be changed afterwards.</p>
+          <div className="form-buttons">
+            <button type="button" className="btn btn-primary" onClick={onConfirm} disabled={voting}>
+              {voting ? 'Submitting...' : election.selfieMode === 'none' ? 'Cast my vote' : 'Continue'}
+            </button>
+            <button type="button" className="btn btn-secondary" onClick={() => setStep('choose')} disabled={voting}>
+              Go back
+            </button>
+          </div>
+        </div>
+      );
+    }
+
+    return (
+      <form onSubmit={(e) => { e.preventDefault(); setError(''); setStep('confirm'); }} className="voting-form">
+        {/*
+          A real radio group: each card is the radio's own label, so choosing a
+          candidate works with the keyboard and arrow keys, and a screen reader
+          announces the group, the name and which one is selected.
+        */}
+        <fieldset className="candidates-fieldset">
+          <legend className="sr-only">Choose one candidate</legend>
+          <div className="candidates-grid">
+            {candidates.map((candidate) => (
+              <label
+                key={candidate._id}
+                className={`candidate-card ${selectedCandidate === candidate._id ? 'selected' : ''}`}
+              >
+                <input
+                  type="radio"
+                  name="candidate"
+                  value={candidate._id}
+                  checked={selectedCandidate === candidate._id}
+                  onChange={() => setSelectedCandidate(candidate._id)}
+                  className="candidate-radio sr-only"
+                />
+
+                <span className="candidate-tick" aria-hidden="true">
+                  <Icon name="check" size={15} strokeWidth={3} />
+                </span>
+
+                <span className="candidate-image-container">
+                  {candidate.image ? (
+                    <img src={imageUrl(candidate.image)} alt="" className="candidate-image" />
+                  ) : (
+                    <span className="candidate-image-placeholder" aria-hidden="true">
+                      {candidate.name.charAt(0)}
+                    </span>
+                  )}
+                </span>
+
+                <span className="candidate-details">
+                  <span className="candidate-name">{candidate.name}</span>
+                  {candidate.party && <span className="candidate-party">{candidate.party}</span>}
+                </span>
+              </label>
+            ))}
+          </div>
+        </fieldset>
+
+        <div className="voting-actions">
+          <button type="submit" className="btn btn-primary btn-lg vote-button" disabled={!selectedCandidate}>
+            <Icon name="ballot" />
+            {selectedCandidate ? `Vote for ${chosen.name}` : 'Choose a candidate first'}
+          </button>
+        </div>
+      </form>
+    );
+  };
+
   return (
     <div className="voting-container">
       <div className="voting-header">
-        <h2>Cast Your Vote</h2>
-        <p className="voting-subtitle">Select your preferred candidate and submit your vote</p>
+        <h2>{election.title}</h2>
+        {election.description && <p className="voting-subtitle">{election.description}</p>}
       </div>
 
       {error && (
-        <div className="alert alert-danger">
-          <i className="fas fa-exclamation-circle mr-2"></i>
-          {error}
-        </div>
-      )}
-      
-      {successMessage && (
-        <div className="alert alert-success">
-          <i className="fas fa-check-circle mr-2"></i>
-          {successMessage}
+        <div className="alert alert-danger" role="alert">
+          <Icon name="alertCircle" />
+          <div>{error}</div>
         </div>
       )}
 
-      {loading ? (
-        <div className="loading-container">
-          <div className="spinner"></div>
-          <p>Loading candidates...</p>
-        </div>
-      ) : candidates.length === 0 ? (
-        <div className="empty-state">
-          <div className="alert alert-info">
-            <i className="fas fa-info-circle mr-2"></i>
-            No candidates available for voting at this time.
-          </div>
-        </div>
-      ) : (
-        <form onSubmit={handleVoteSubmit} className="voting-form">
-          <div className="candidates-grid">
-            {candidates.map(candidate => (
-              <div 
-                key={candidate._id} 
-                className={`candidate-card ${selectedCandidate === candidate._id ? 'selected' : ''}`}
-                onClick={() => setSelectedCandidate(candidate._id)}
-              >
-                <div className="candidate-selection">
-                  <input
-                    type="radio"
-                    id={candidate._id}
-                    name="candidate"
-                    value={candidate._id}
-                    checked={selectedCandidate === candidate._id}
-                    onChange={() => setSelectedCandidate(candidate._id)}
-                    className="candidate-radio"
-                  />
-                  <label htmlFor={candidate._id} className="sr-only">{candidate.name}</label>
-                </div>
-                
-                <div className="candidate-content">
-                  <div className="candidate-image-container">
-                    {candidate.imageUrl ? (
-                      <img 
-                        src={candidate.imageUrl} 
-                        alt={candidate.name}
-                        className="candidate-image"
-                      />
-                    ) : (
-                      <div className="candidate-image-placeholder">
-                        {candidate.name.charAt(0)}
-                      </div>
-                    )}
-                  </div>
-                  
-                  <div className="candidate-details">
-                    <h3 className="candidate-name">{candidate.name}</h3>
-                    {candidate.party && <div className="candidate-party">{candidate.party}</div>}
-                    {candidate.age && <div className="candidate-age">Age: {candidate.age}</div>}
-                  </div>
-                </div>
-                
-                {selectedCandidate === candidate._id && (
-                  <div className="selection-indicator">
-                    <i className="fas fa-check-circle"></i> Selected
-                  </div>
-                )}
-              </div>
-            ))}
-          </div>
-          
-          <div className="voting-actions">
-            <button 
-              type="submit" 
-              className="btn btn-primary vote-button"
-              disabled={!selectedCandidate || voting}
-            >
-              {voting ? (
-                <>
-                  <span className="spinner-border spinner-border-sm mr-2" role="status" aria-hidden="true"></span>
-                  Submitting...
-                </>
-              ) : (
-                <>
-                  <i className="fas fa-vote-yea mr-2"></i>
-                  Submit Vote
-                </>
-              )}
-            </button>
-          </div>
-        </form>
-      )}
-      
-      {voteSubmitted && (
-        <div className="vote-success">
-          <div className="check-animation">✓</div>
-          <h3>Vote Submitted Successfully!</h3>
-          <p>Thank you for participating in the election.</p>
-          <p>Redirecting to results page...</p>
-        </div>
-      )}
-      
-      {hasVoted && (
-        <div className="already-voted">
-          <div className="alert alert-info already-voted-alert">
-            <div className="already-voted-icon">
-              <i className="fas fa-vote-yea fa-3x"></i>
-            </div>
-            <div className="already-voted-content">
-              <h3>You have already cast your vote</h3>
-              <p>Each voter can only vote once. Thank you for participating!</p>
-              <button 
-                onClick={() => navigate('/results')} 
-                className="btn btn-primary mt-3"
-              >
-                <i className="fas fa-chart-bar mr-2"></i>
-                View Election Results
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      {renderBody()}
     </div>
   );
 };

@@ -1,111 +1,84 @@
-const express = require('express');
-const app = express();
-const cors = require('cors');
-const mongoose = require('mongoose');
 require('dotenv').config();
+const mongoose = require('mongoose');
+const app = require('./app');
+const mailer = require('./mailer');
 
-const bodyParser = require('body-parser');
-app.use(bodyParser.json());
 const PORT = process.env.PORT || 3000;
-
-//Importing routes
-const userRoutes = require('./routes/userRoutes');
-const candidateRoutes = require('./routes/candidateRoute');
-
-
-// CORS middleware
-app.use(cors({
-  origin: '*',  // Allow all origins in development
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization']
-}));
-
-//use the routes
-app.use('/user', userRoutes);
-app.use('/candidates',  candidateRoutes);
-
-// Add a working health check endpoint for frontend connectivity
-app.get('/health', (req, res) => {
-  res.status(200).json({
-    status: 'ok',
-    timestamp: new Date().toISOString(),
-    server: {
-      uptime: process.uptime(),
-      memory: process.memoryUsage(),
-      nodeVersion: process.version
-    },
-    database: {
-      status: mongoose.connection.readyState === 1 ? 'connected' : 'disconnected'
-    }
-  });
-});
-
-// Fix static file serving path - frontend build directory is not inside backend
-// Serve frontend in production (only for non-API routes)
-const path = require('path');
-const frontendPath = path.join(__dirname, '..', 'frontend', 'build');
-app.use(express.static(frontendPath));
-
-// Use a proper regex that won't cause syntax errors
-app.get(/^(?!(\/api|\/user|\/candidates)).*$/, (req, res) => {
-  res.sendFile(path.join(frontendPath, 'index.html'));
-});
 
 // MongoDB Connection
 const connectDB = async () => {
+  // Use MONGODB_URI from .env file
+  const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/voting_app';
+  console.log('Attempting to connect to MongoDB at:', MONGODB_URI.replace(/:([^:@]+)@/, ':****@')); // Hide password in logs
+
+  await mongoose.connect(MONGODB_URI, {
+    serverSelectionTimeoutMS: 30000,
+    socketTimeoutMS: 60000,
+    // Enough connections for a rush of voters without exhausting a small Atlas tier
+    maxPoolSize: Number(process.env.MONGODB_POOL_SIZE) || 50
+  });
+  console.log('MongoDB connected successfully!');
+};
+
+// The pre-2.0 users collection has unique indexes that block new sign-ups
+const warnAboutLegacyData = async () => {
   try {
-    // Use MONGODB_URI from .env file
-    const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/voting_app';
-    console.log('Attempting to connect to MongoDB Atlas at:', MONGODB_URI.replace(/:([^:@]+)@/, ':****@')); // Hide password in logs
-    
-    // Improved connection options
-    await mongoose.connect(MONGODB_URI, {
-      useNewUrlParser: true,
-      useUnifiedTopology: true,
-      serverSelectionTimeoutMS: 30000,
-      socketTimeoutMS: 60000,
-      connectTimeoutMS: 30000,
-      retryWrites: true,
-      retryReads: true
-    });
-    
-    console.log('MongoDB Atlas connected successfully!');
-    return true;
+    const indexes = await mongoose.connection.collection('users').indexes();
+    if (indexes.some(index => index.name === 'aadharCardNumber_1')) {
+      console.warn('WARNING: This database still has data from the old version of the app.');
+      console.warn('New users will not be able to sign in until it is cleared. Run: npm run reset-db');
+    }
   } catch (error) {
-    console.error('MongoDB Atlas connection error:', error);
-    return false;
+    // The collection does not exist yet on a fresh database
   }
 };
 
-// Connect to MongoDB and then start the server
-connectDB().then(connected => {
-  if (!connected) {
-    console.log('Warning: Running without database connection');
+const start = async () => {
+  if (!process.env.JWT_SECRET) {
+    console.error('JWT_SECRET environment variable is not set');
+    process.exit(1);
   }
 
-  // Start the server with better error handling for port conflicts
-  const startServer = (port) => {
-    try {
-      const server = app.listen(port, () => {
-        console.log(`Server is running on port ${port}`);
-      });
-
-      // Handle specific errors
-      server.on('error', (e) => {
-        if (e.code === 'EADDRINUSE') {
-          console.log(`Port ${port} is already in use, trying ${port + 1}...`);
-          server.close();
-          startServer(port + 1);
-        } else {
-          console.error('Server error:', e);
-        }
-      });
-    } catch (error) {
-      console.error('Error starting server:', error);
-      process.exit(1);
+  try {
+    await connectDB();
+  } catch (error) {
+    // Exit so the host restarts us, instead of serving requests that can only fail
+    console.error('MongoDB connection error:', error);
+    if (error.code === 'ENOTFOUND') {
+      console.error('\nThe database address in MONGODB_URI (backend/.env) could not be found.');
+      console.error('If it is a MongoDB Atlas cluster, it may have been deleted: create a new one and update MONGODB_URI.');
+      console.error('To try the app without a database, run: npm run demo');
     }
-  };
+    console.error('\nThe server is NOT running.');
+    process.exit(1);
+  }
+  await warnAboutLegacyData();
 
-  // Start with initial port
-  startServer(PORT);
-});
+  if (!mailer.smtpConfigured()) {
+    console.warn('Email is not set up (SMTP_HOST, SMTP_USER and SMTP_PASS in backend/.env):');
+    console.warn('sign-in codes will be printed HERE, in this terminal, instead of being emailed.');
+  }
+
+  const server = app.listen(PORT, () => {
+    console.log(`Server is running on port ${PORT}`);
+  });
+
+  server.on('error', (e) => {
+    console.error('Server error:', e);
+    process.exit(1);
+  });
+
+  // Finish in-flight requests before stopping, so a redeploy does not cut off a vote
+  const shutdown = () => {
+    console.log('Shutting down...');
+    server.close(async () => {
+      await mongoose.connection.close();
+      process.exit(0);
+    });
+    setTimeout(() => process.exit(1), 10000).unref();
+  };
+  process.on('SIGTERM', shutdown);
+  process.on('SIGINT', shutdown);
+};
+
+start();

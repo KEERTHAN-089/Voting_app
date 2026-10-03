@@ -1,75 +1,102 @@
-/* Voting Page Styles */
+/* The ballot: candidate choice, confirmation, and the states around them. */
+
 .voting-container {
-  max-width: 1200px;
+  max-width: 900px;
   margin: 0 auto;
-  padding: 2rem 1rem;
 }
 
 .voting-header {
   text-align: center;
-  margin-bottom: 2rem;
+  margin-bottom: var(--space-6);
 }
 
 .voting-subtitle {
-  color: #6c757d;
-  font-size: 1.1rem;
+  max-width: 56ch;
+  margin: 0 auto;
+  color: var(--text-muted);
 }
 
-/* Candidate Cards Grid */
+.candidates-fieldset {
+  border: none;
+  margin: 0;
+  padding: 0;
+}
+
 .candidates-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-  gap: 1.5rem;
-  margin-bottom: 2rem;
+  grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+  gap: var(--space-4);
 }
 
+/*
+ * Each card is the <label> for its own radio. The input itself is visually
+ * hidden but still focusable, so the keyboard focus ring is drawn on the card
+ * through :focus-within instead.
+ */
 .candidate-card {
   position: relative;
-  border: 2px solid #e9ecef;
-  border-radius: 8px;
-  padding: 1.5rem;
-  transition: all 0.3s ease;
-  cursor: pointer;
-  background-color: #fff;
-  box-shadow: 0 2px 5px rgba(0,0,0,0.05);
-}
-
-.candidate-card:hover {
-  transform: translateY(-5px);
-  box-shadow: 0 5px 15px rgba(0,0,0,0.1);
-  border-color: #ced4da;
-}
-
-.candidate-card.selected {
-  border-color: #007bff;
-  background-color: #f8f9ff;
-  box-shadow: 0 5px 15px rgba(0, 123, 255, 0.2);
-}
-
-.candidate-selection {
-  position: absolute;
-  top: 15px;
-  right: 15px;
-}
-
-.candidate-radio {
-  transform: scale(1.5);
-  cursor: pointer;
-}
-
-.candidate-content {
   display: flex;
   flex-direction: column;
   align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-5) var(--space-4);
+  border: 2px solid var(--border);
+  border-radius: var(--radius-lg);
+  background-color: var(--surface);
+  box-shadow: var(--shadow-xs);
+  cursor: pointer;
+  transition: border-color var(--dur) var(--ease), box-shadow var(--dur) var(--ease),
+    background-color var(--dur) var(--ease);
+}
+
+.candidate-card:hover {
+  border-color: var(--border-strong);
+  box-shadow: var(--shadow-md);
+}
+
+.candidate-card:focus-within {
+  outline: 2px solid var(--ring);
+  outline-offset: 3px;
+}
+
+.candidate-card.selected {
+  border-color: var(--primary);
+  background-color: var(--primary-soft);
+  box-shadow: var(--shadow-md);
+}
+
+/* The tick is the selected state made visible, alongside the border colour. */
+.candidate-tick {
+  position: absolute;
+  top: var(--space-3);
+  right: var(--space-3);
+  display: grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  border: 2px solid var(--border-strong);
+  border-radius: 50%;
+  background-color: var(--surface);
+  color: transparent;
+  transition: background-color var(--dur) var(--ease), border-color var(--dur) var(--ease),
+    color var(--dur) var(--ease);
+}
+
+.candidate-card.selected .candidate-tick {
+  border-color: var(--primary);
+  background-color: var(--primary);
+  color: var(--text-on-primary);
 }
 
 .candidate-image-container {
-  width: 120px;
-  height: 120px;
-  margin-bottom: 1rem;
-  border-radius: 50%;
+  display: block;
+  width: 104px;
+  height: 104px;
+  border-radius: var(--radius-full);
+  border: 2px solid var(--surface);
+  background-color: var(--surface-3);
+  box-shadow: var(--shadow-sm);
   overflow: hidden;
-  border: 1px solid #dee2e6;
 }
 
 .candidate-image {
@@ -79,153 +106,139 @@
 }
 
 .candidate-image-placeholder {
+  display: grid;
+  place-items: center;
   width: 100%;
   height: 100%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background-color: #e9ecef;
-  font-size: 3rem;
-  color: #6c757d;
+  background: linear-gradient(140deg, var(--primary-soft), var(--surface-3));
+  color: var(--primary);
+  font-family: var(--font-display);
+  font-size: 2.25rem;
+  font-weight: 600;
 }
 
 .candidate-details {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
   text-align: center;
-  width: 100%;
 }
 
 .candidate-name {
-  font-size: 1.5rem;
-  margin-bottom: 0.5rem;
-  color: #343a40;
+  font-family: var(--font-display);
+  font-size: var(--text-lg);
+  font-weight: 600;
+  line-height: var(--leading-snug);
+  color: var(--text);
+  overflow-wrap: anywhere;
 }
 
 .candidate-party {
-  font-weight: 500;
-  color: #495057;
-  margin-bottom: 0.25rem;
+  color: var(--text-muted);
+  font-size: var(--text-sm);
 }
 
-.candidate-age {
-  color: #6c757d;
-  font-size: 0.9rem;
-}
+/* ---- Submit ------------------------------------------------------------ */
 
-.selection-indicator {
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  background-color: #007bff;
-  color: white;
-  text-align: center;
-  padding: 0.5rem;
-  border-bottom-left-radius: 6px;
-  border-bottom-right-radius: 6px;
-  font-weight: 500;
-}
-
-/* Voting Actions */
 .voting-actions {
   display: flex;
   justify-content: center;
-  margin-top: 2rem;
+  margin-top: var(--space-6);
 }
 
 .vote-button {
-  padding: 0.75rem 2rem;
-  font-size: 1.1rem;
-  border-radius: 50px;
-  transition: all 0.3s ease;
+  min-width: 260px;
 }
 
-.vote-button:hover:not(:disabled) {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 8px rgba(0, 123, 255, 0.3);
-}
+/* ---- Confirmation and end states --------------------------------------- */
 
-.vote-button:disabled {
-  cursor: not-allowed;
-  opacity: 0.6;
-}
-
-/* Loading State */
-.loading-container {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding: 3rem 0;
-}
-
-.spinner {
-  border: 4px solid rgba(0, 123, 255, 0.3);
-  border-radius: 50%;
-  border-top: 4px solid #007bff;
-  width: 40px;
-  height: 40px;
-  animation: spin 1s linear infinite;
-  margin-bottom: 1rem;
-}
-
-@keyframes spin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
-}
-
-/* Success Animation */
-.vote-success {
+.state-panel {
+  max-width: var(--page-narrow);
+  margin: 0 auto;
+  padding: var(--space-6);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-xl);
+  background-color: var(--surface);
+  box-shadow: var(--shadow-sm);
   text-align: center;
-  padding: 3rem 0;
+}
+
+.state-panel p {
+  color: var(--text-muted);
+}
+
+.state-icon {
+  display: inline-grid;
+  place-items: center;
+  width: 52px;
+  height: 52px;
+  margin-bottom: var(--space-4);
+  border-radius: var(--radius-full);
+  background-color: var(--primary-soft);
+  color: var(--primary);
+}
+
+.state-icon-success {
+  background-color: var(--success-soft);
+  color: var(--success);
+}
+
+.vote-success {
+  max-width: var(--page-narrow);
+  margin: 0 auto;
+  padding: var(--space-7) var(--space-5);
+  border: 1px solid color-mix(in srgb, var(--success) 30%, transparent);
+  border-radius: var(--radius-xl);
+  background-color: var(--surface);
+  box-shadow: var(--shadow-md);
+  text-align: center;
+  animation: fade-in var(--dur-slow) var(--ease-out);
 }
 
 .check-animation {
-  display: inline-block;
-  color: #28a745;
-  font-size: 5rem;
-  animation: scaleIn 0.5s ease-in-out;
+  display: inline-grid;
+  place-items: center;
+  width: 82px;
+  height: 82px;
+  margin-bottom: var(--space-4);
+  border-radius: 50%;
+  background-color: var(--success);
+  color: #fff;
+  animation: pop-in 420ms var(--ease-out);
 }
 
-@keyframes scaleIn {
-  0% { transform: scale(0); opacity: 0; }
-  80% { transform: scale(1.2); opacity: 1; }
+@keyframes pop-in {
+  0% { transform: scale(0.4); opacity: 0; }
+  70% { transform: scale(1.06); opacity: 1; }
   100% { transform: scale(1); }
 }
 
-/* Already Voted State */
-.already-voted {
-  max-width: 700px;
-  margin: 0 auto;
-}
-
-.already-voted-alert {
-  display: flex;
-  align-items: center;
-  padding: 2rem;
-}
-
-.already-voted-icon {
-  margin-right: 1.5rem;
-  color: #17a2b8;
-}
-
-.already-voted-content {
-  flex: 1;
-}
-
-/* Responsive Adjustments */
-@media (max-width: 768px) {
+@media (max-width: 640px) {
   .candidates-grid {
-    grid-template-columns: 1fr;
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    gap: var(--space-3);
   }
-  
-  .already-voted-alert {
-    flex-direction: column;
-    text-align: center;
+
+  .candidate-card {
+    padding: var(--space-4) var(--space-3);
   }
-  
-  .already-voted-icon {
-    margin-right: 0;
-    margin-bottom: 1rem;
+
+  .candidate-image-container {
+    width: 80px;
+    height: 80px;
+  }
+
+  .candidate-name {
+    font-size: var(--text-base);
+  }
+
+  .vote-button {
+    min-width: 0;
+    width: 100%;
+  }
+
+  .state-panel,
+  .confirm-box {
+    padding: var(--space-5);
   }
 }
